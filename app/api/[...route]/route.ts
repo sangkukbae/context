@@ -17,6 +17,31 @@ try {
 // Create the main Hono app
 const app = new Hono().basePath('/api')
 
+// Security headers middleware
+app.use('*', async (c, next) => {
+  // Set security headers
+  c.header('X-Content-Type-Options', 'nosniff')
+  c.header('X-Frame-Options', 'DENY')
+  c.header('X-XSS-Protection', '1; mode=block')
+  c.header('Referrer-Policy', 'strict-origin-when-cross-origin')
+
+  // CORS configuration
+  c.header(
+    'Access-Control-Allow-Origin',
+    isProduction ? env.APP_URL || 'https://your-domain.com' : '*'
+  )
+  c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
+  c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+  c.header('Access-Control-Max-Age', '86400')
+
+  // Handle preflight requests
+  if (c.req.method === 'OPTIONS') {
+    return new Response(null, { status: 204 })
+  }
+
+  await next()
+})
+
 // Health check endpoint
 app.get('/health', c => {
   return c.json({

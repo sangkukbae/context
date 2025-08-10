@@ -6,7 +6,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 
   // Database
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z.string().url().optional(),
   DIRECT_URL: z.string().url().optional(),
 
   // Redis (Upstash)
@@ -24,8 +24,8 @@ const envSchema = z.object({
   OPENAI_EMBEDDING_MODEL: z.string().default('text-embedding-3-small'),
 
   // NextAuth.js
-  NEXTAUTH_URL: z.string().url(),
-  NEXTAUTH_SECRET: z.string(),
+  NEXTAUTH_URL: z.string().url().optional(),
+  NEXTAUTH_SECRET: z.string().optional(),
 
   // OAuth Providers
   GOOGLE_CLIENT_ID: z.string().optional(),
@@ -82,35 +82,41 @@ const envSchema = z.object({
   DEBUG_MODE: z.coerce.boolean().default(false),
 })
 
-// Parse and validate environment variables
-function parseEnv() {
-  try {
-    return envSchema.parse(process.env)
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const errorMessage = '❌ Environment validation failed!'
-      const issues = error.issues
-        .map(issue => `${issue.path.join('.')}: ${issue.message}`)
-        .join(', ')
+// Safe environment parsing that won't crash the app
+function parseEnvSafely() {
+  const result = envSchema.safeParse(process.env)
 
-      console.error(errorMessage)
-      console.error('Issues found:')
-      error.issues.forEach(issue => {
-        console.error(`  - ${issue.path.join('.')}: ${issue.message}`)
-      })
+  if (!result.success) {
+    const errorMessage = '❌ Environment validation failed!'
 
-      console.error('\nPlease check your .env files and update them accordingly.')
-      console.error('See .env.example for reference.\n')
+    console.error(errorMessage)
+    console.error('Issues found:')
+    result.error.issues.forEach(issue => {
+      console.error(`  - ${issue.path.join('.')}: ${issue.message}`)
+    })
 
-      // Throw error instead of process.exit to allow graceful handling
-      throw new Error(`Environment validation failed: ${issues}`)
+    console.error('\nPlease check your .env files and update them accordingly.')
+    console.error('See .env.example for reference.\n')
+
+    // Return partial config with defaults for missing critical values
+    const defaultEnv = {
+      NODE_ENV: (process.env.NODE_ENV || 'development') as 'development' | 'production' | 'test',
+      DATABASE_URL: process.env.DATABASE_URL || undefined,
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL || undefined,
+      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || undefined,
+      ...envSchema.parse({}), // Get all defaults from schema
+      ...process.env, // Override with actual env vars where available
     }
-    throw error
+
+    console.warn('⚠️  Running with partial configuration - some features may be disabled')
+    return defaultEnv
   }
+
+  return result.data
 }
 
 // Exported environment configuration
-export const env = parseEnv()
+export const env = parseEnvSafely()
 
 // Type-safe environment access
 export type Env = z.infer<typeof envSchema>
@@ -128,7 +134,7 @@ export const features = {
   realTimeSync: env.ENABLE_REAL_TIME_SYNC,
 } as const
 
-// Service availability checks
+// Service availability checks enhanced
 export const services = {
   hasOpenAI: !!env.OPENAI_API_KEY,
   hasPinecone: !!(env.PINECONE_API_KEY && env.PINECONE_ENVIRONMENT),
@@ -139,32 +145,38 @@ export const services = {
   hasSentry: !!env.SENTRY_DSN,
   hasPostHog: !!env.POSTHOG_API_KEY,
   hasResend: !!env.RESEND_API_KEY,
+  hasDatabase: !!env.DATABASE_URL,
+  hasAuth: !!(env.NEXTAUTH_URL && env.NEXTAUTH_SECRET),
 } as const
 
 // Configuration objects for different services
-export const database = {
-  url: env.DATABASE_URL,
-  directUrl: env.DIRECT_URL,
-} as const
+export const database = services.hasDatabase
+  ? {
+      url: env.DATABASE_URL!,
+      directUrl: env.DIRECT_URL,
+    }
+  : null
 
-export const auth = {
-  url: env.NEXTAUTH_URL,
-  secret: env.NEXTAUTH_SECRET,
-  providers: {
-    google: services.hasGoogle
-      ? {
-          clientId: env.GOOGLE_CLIENT_ID!,
-          clientSecret: env.GOOGLE_CLIENT_SECRET!,
-        }
-      : null,
-    github: services.hasGitHub
-      ? {
-          clientId: env.GITHUB_CLIENT_ID!,
-          clientSecret: env.GITHUB_CLIENT_SECRET!,
-        }
-      : null,
-  },
-} as const
+export const auth = services.hasAuth
+  ? {
+      url: env.NEXTAUTH_URL!,
+      secret: env.NEXTAUTH_SECRET!,
+      providers: {
+        google: services.hasGoogle
+          ? {
+              clientId: env.GOOGLE_CLIENT_ID!,
+              clientSecret: env.GOOGLE_CLIENT_SECRET!,
+            }
+          : null,
+        github: services.hasGitHub
+          ? {
+              clientId: env.GITHUB_CLIENT_ID!,
+              clientSecret: env.GITHUB_CLIENT_SECRET!,
+            }
+          : null,
+      },
+    }
+  : null
 
 export const ai = {
   openai: services.hasOpenAI
@@ -200,6 +212,23 @@ export function validateRequiredServices() {
   const warnings: string[] = []
   const errors: string[] = []
 
+  // Check critical infrastructure
+  if (!services.hasDatabase) {
+    if (isProduction) {
+      errors.push('Database configuration is missing - required for production')
+    } else {
+      warnings.push('Database is not configured - some features will be disabled')
+    }
+  }
+
+  if (!services.hasAuth) {
+    if (isProduction) {
+      errors.push('Authentication configuration is missing - required for production')
+    } else {
+      warnings.push('Authentication is not configured - auth features will be disabled')
+    }
+  }
+
   // Check AI features
   if (features.aiClustering && !services.hasOpenAI) {
     errors.push('AI clustering is enabled but OpenAI API key is missing')
@@ -232,7 +261,12 @@ export function validateRequiredServices() {
   if (errors.length > 0) {
     console.error('❌ Configuration errors:')
     errors.forEach(error => console.error(`  - ${error}`))
-    throw new Error('Invalid service configuration')
+
+    if (isProduction) {
+      throw new Error('Invalid service configuration - cannot run in production')
+    } else {
+      console.warn('⚠️  Continuing in development mode with degraded functionality')
+    }
   }
 
   if (warnings.length === 0 && errors.length === 0) {
