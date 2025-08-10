@@ -6,6 +6,33 @@ This document provides a comprehensive task breakdown for implementing the Conte
 
 **Architecture Note**: This plan uses a unified Next.js 15+ App Router + Hono.js architecture for faster development (30-40% timeline reduction), simplified deployment, and reduced infrastructure costs (60-70% reduction) compared to traditional separated frontend/backend approaches.
 
+## Backend Architecture Decision
+
+**Chosen Solution**: Supabase as primary backend infrastructure
+
+**Key Benefits**:
+
+- **Unified Backend**: Single service for database, auth, real-time, and vector search
+- **Cost Reduction**: Supabase Pro ($25/month) vs Neon ($25) + Upstash ($15) = $40/month savings
+- **Simplified Architecture**: Fewer service integrations and API coordination overhead
+- **Built-in Features**: Authentication, real-time subscriptions, and vector search out-of-the-box
+- **PostgreSQL Native**: Full PostgreSQL compatibility with pgvector extension
+- **Edge Optimization**: Global edge network with connection pooling
+
+**When to Add Upstash Redis**:
+
+- High-frequency caching needs (>10,000 requests/minute)
+- Complex session management beyond Supabase capabilities
+- Rate limiting at edge locations
+- Advanced pub/sub messaging patterns
+
+**Migration Considerations**:
+
+- Supabase provides PostgreSQL dump/restore for easy migration
+- Built-in connection pooling eliminates separate pooling setup
+- Row Level Security (RLS) provides fine-grained access control
+- Supabase CLI enables local development with Docker
+
 ## Technology Stack Overview
 
 **Unified Full-Stack Framework**:
@@ -23,9 +50,11 @@ This document provides a comprehensive task breakdown for implementing the Conte
 
 **External Managed Services**:
 
-- **Database**: Neon PostgreSQL (serverless, auto-scaling)
-- **Cache & Sessions**: Upstash Redis (edge-optimized)
-- **Vector Database**: Pinecone (AI embeddings)
+- **Database**: Supabase PostgreSQL (managed, real-time enabled)
+- **Vector Database**: Supabase pgvector extension (built-in vector support)
+- **Authentication**: Supabase Auth (built-in OAuth providers)
+- **Real-time**: Supabase Realtime (WebSocket subscriptions)
+- **Cache & Sessions**: Supabase built-in (optional Upstash Redis for heavy caching)
 - **Background Jobs**: Vercel Queue Functions or Cloudflare Queues
 
 **Infrastructure**:
@@ -56,45 +85,48 @@ This document provides a comprehensive task breakdown for implementing the Conte
 
 **Priority: CRITICAL** | **Dependencies: None** | **Complexity: Medium**
 
-#### 1.1 Development Environment Setup
+#### 1.1 Development Environment Setup ✅ **COMPLETED**
 
-- [ ] Initialize Next.js 15+ project with App Router and TypeScript
-- [ ] Set up Hono.js integration for unified API routes
-- [ ] Configure Tailwind CSS for styling
-- [ ] Install and configure shadcn/ui components library
-- [ ] Set up shadcn/ui CLI for component installation (`pnpm dlx shadcn@latest init`)
-- [ ] Configure components.json for shadcn/ui customization
-- [ ] Set up ESLint, Prettier, and pre-commit hooks
-- [ ] Configure shared TypeScript types across frontend/backend
-- [ ] Set up environment variable management for unified deployment
-- [ ] Initialize Git repository with proper .gitignore
+- [x] Initialize Next.js 15+ project with App Router and TypeScript
+- [x] Set up Hono.js integration for unified API routes
+- [x] Configure Tailwind CSS for styling
+- [x] Install and configure shadcn/ui components library
+- [x] Set up shadcn/ui CLI for component installation (`npx shadcn-ui@latest init`)
+- [x] Configure components.json for shadcn/ui customization
+- [x] Set up ESLint, Prettier, and pre-commit hooks
+- [x] Configure shared TypeScript types across frontend/backend
+- [x] Set up environment variable management for unified deployment
+- [x] Initialize Git repository with proper .gitignore
 
 #### 1.2 Database Architecture
 
-- [ ] Set up Neon PostgreSQL as managed database service
+- [ ] Set up Supabase project and PostgreSQL database
 - [ ] Design PostgreSQL schema for users, notes, clusters, documents
-- [ ] Set up Prisma ORM with initial migrations for Edge Runtime compatibility
+- [ ] Configure Supabase Row Level Security (RLS) policies
+- [ ] Set up Prisma ORM with Supabase connection for Edge Runtime compatibility
 - [ ] Create database indexes for performance
-- [ ] Configure Upstash Redis for caching and sessions
-- [ ] Set up connection pooling optimized for serverless environments
+- [ ] Enable pgvector extension for AI embeddings
+- [ ] Configure Supabase connection pooling (built-in)
+- [ ] Set up optional Upstash Redis for advanced caching (if needed)
 
-#### 1.3 Unified API Foundation
+#### 1.3 Unified API Foundation ✅ **COMPLETED**
 
-- [ ] Set up Hono.js app in app/api/[...route]/route.ts for unified API handling
-- [ ] Configure security middleware with Hono.js (helmet, rate limiting)
-- [ ] Set up request validation with Zod schemas shared across frontend/backend
-- [ ] Configure error handling and structured logging for serverless
-- [ ] Implement health check endpoints via Hono.js routes
-- [ ] Set up edge-compatible rate limiting with Upstash Rate Limiting
+- [x] Set up Hono.js app in app/api/[...route]/route.ts for unified API handling
+- [x] Configure security middleware with Hono.js (helmet, rate limiting)
+- [x] Set up request validation with Zod schemas shared across frontend/backend
+- [x] Configure error handling and structured logging for serverless
+- [x] Implement health check endpoints via Hono.js routes
+- [x] Set up rate limiting with Supabase (or Upstash for advanced needs)
 
 #### 1.4 Deployment Infrastructure
 
 - [ ] Configure Vercel for unified full-stack deployment (frontend + API)
-- [ ] Set up Neon PostgreSQL production database with connection pooling
-- [ ] Configure Upstash Redis for production caching and sessions
-- [ ] Set up Pinecone vector database for AI embeddings
-- [ ] Configure environment variables for single deployment
-- [ ] Set up monitoring with Vercel Analytics, Sentry, and structured logging
+- [ ] Set up Supabase production project with database and auth
+- [ ] Configure Supabase environment variables for single deployment
+- [ ] Enable Supabase Realtime for WebSocket connections
+- [ ] Set up pgvector extension for AI embeddings
+- [ ] Configure optional Upstash Redis for advanced caching (if needed)
+- [ ] Set up monitoring with Vercel Analytics, Sentry, and Supabase Dashboard
 
 ### 2. Basic Authentication & User Management (P0-5)
 
@@ -102,12 +134,13 @@ This document provides a comprehensive task breakdown for implementing the Conte
 
 #### 2.1 Authentication System
 
-- [ ] Implement NextAuth.js with multiple providers
-- [ ] Configure Google OAuth integration
-- [ ] Configure GitHub OAuth integration
-- [ ] Configure Apple Sign-In (optional for MVP)
-- [ ] Set up JWT token management
-- [ ] Implement session management with Redis
+- [ ] Implement Supabase Auth with multiple providers
+- [ ] Configure Google OAuth integration via Supabase
+- [ ] Configure GitHub OAuth integration via Supabase
+- [ ] Configure Apple Sign-In via Supabase (optional for MVP)
+- [ ] Set up Supabase JWT token management (built-in)
+- [ ] Implement session management with Supabase Auth (built-in)
+- [ ] Configure Row Level Security (RLS) policies for user data
 
 #### 2.2 User Profile & Settings
 
@@ -120,12 +153,13 @@ This document provides a comprehensive task breakdown for implementing the Conte
 
 #### 2.3 Cross-Device Sync Foundation
 
-- [ ] Design sync architecture and conflict resolution for unified deployment
-- [ ] Implement WebSocket support via Hono.js for real-time updates
+- [ ] Design sync architecture using Supabase Realtime
+- [ ] Implement Supabase Realtime subscriptions for real-time updates
 - [ ] Create client-side sync state management with Next.js state
 - [ ] Build offline-first data layer with shared TypeScript types
-- [ ] Implement basic conflict resolution algorithm
+- [ ] Implement conflict resolution with Supabase's optimistic updates
 - [ ] Add sync status indicators in UI
+- [ ] Configure Supabase Realtime channels for user-specific updates
 
 ### 3. The Log - Core Capture System (P0-1)
 
@@ -190,28 +224,29 @@ This document provides a comprehensive task breakdown for implementing the Conte
 
 - [ ] Set up OpenAI API integration
 - [ ] Implement text embedding generation pipeline
-- [ ] Configure Pinecone vector database (managed service)
-- [ ] Create embedding sync using Vercel Queue Functions or external queue service
-- [ ] Implement incremental embedding updates
+- [ ] Configure Supabase pgvector extension for vector storage
+- [ ] Create embedding sync using Vercel Queue Functions
+- [ ] Implement incremental embedding updates with Supabase
 - [ ] Add embedding quality monitoring
+- [ ] Set up vector similarity search with pgvector
 
 #### 5.2 Semantic Search
 
-- [ ] Build vector similarity search
-- [ ] Implement hybrid search (keyword + semantic)
+- [ ] Build vector similarity search with Supabase pgvector
+- [ ] Implement hybrid search (PostgreSQL FTS + pgvector semantic)
 - [ ] Create search result ranking algorithm
 - [ ] Add semantic search API routes via Hono.js
 - [ ] Integrate semantic search into frontend
-- [ ] Optimize search performance and caching
+- [ ] Optimize search performance with Supabase indexing and caching
 
 #### 5.3 Auto-Clustering Algorithm
 
-- [ ] Implement cosine similarity clustering
+- [ ] Implement cosine similarity clustering with Supabase pgvector
 - [ ] Create batch processing for cluster generation using Vercel Cron Jobs or Queue Functions
 - [ ] Design cluster quality scoring system
-- [ ] Implement dynamic cluster updates
+- [ ] Implement dynamic cluster updates with Supabase Realtime
 - [ ] Add cluster suggestion API routes via Hono.js
-- [ ] Create cluster validation and filtering
+- [ ] Create cluster validation and filtering with Supabase RLS
 
 ### 6. Cluster Management & Suggestions (P0-3)
 
@@ -373,30 +408,30 @@ This document provides a comprehensive task breakdown for implementing the Conte
 
 #### 11.1 Document Sharing System
 
-- [ ] Implement read-only sharing links
+- [ ] Implement read-only sharing links with Supabase RLS
 - [ ] Create share link generation and management
-- [ ] Add share link expiration and permissions
+- [ ] Add share link expiration and permissions via Supabase policies
 - [ ] Implement password protection for shares
-- [ ] Build shared document access tracking
-- [ ] Create share link revocation system
+- [ ] Build shared document access tracking with Supabase analytics
+- [ ] Create share link revocation system with Supabase auth
 
 #### 11.2 Comment and Feedback System
 
 - [ ] Design comment data model and Hono.js API routes
-- [ ] Implement comment creation and threading
+- [ ] Implement comment creation and threading with Supabase Realtime
 - [ ] Create comment UI with inline annotations
-- [ ] Add comment notifications and mentions
-- [ ] Implement comment moderation tools
-- [ ] Build comment search and filtering
+- [ ] Add comment notifications and mentions via Supabase triggers
+- [ ] Implement comment moderation tools with Supabase RLS
+- [ ] Build comment search and filtering with PostgreSQL FTS
 
 #### 11.3 Basic Team Workspaces
 
-- [ ] Design team/workspace data model
-- [ ] Implement team invitation system
-- [ ] Create workspace permission management
+- [ ] Design team/workspace data model with Supabase RLS
+- [ ] Implement team invitation system with Supabase Auth
+- [ ] Create workspace permission management via Supabase policies
 - [ ] Build team member management interface
-- [ ] Implement workspace-level settings
-- [ ] Add workspace activity feeds
+- [ ] Implement workspace-level settings with Supabase
+- [ ] Add workspace activity feeds with Supabase Realtime
 
 ---
 
@@ -441,7 +476,7 @@ This document provides a comprehensive task breakdown for implementing the Conte
 
 - [ ] Design and build public REST API
 - [ ] Create comprehensive API documentation
-- [ ] Implement API authentication and rate limiting
+- [ ] Implement API authentication and rate limiting with Supabase Auth
 - [ ] Build developer portal and tools
 - [ ] Create SDK libraries for popular languages
 - [ ] Add webhook system for integrations
@@ -452,21 +487,21 @@ This document provides a comprehensive task breakdown for implementing the Conte
 
 #### 14.1 Advanced Team Features
 
-- [ ] Implement shared logs for teams
-- [ ] Create real-time collaborative editing
-- [ ] Build team analytics and insights
-- [ ] Add advanced permission management
-- [ ] Implement audit logs and compliance
-- [ ] Create team knowledge bases
+- [ ] Implement shared logs for teams with Supabase RLS
+- [ ] Create real-time collaborative editing with Supabase Realtime
+- [ ] Build team analytics and insights with Supabase analytics
+- [ ] Add advanced permission management via Supabase policies
+- [ ] Implement audit logs and compliance with Supabase triggers
+- [ ] Create team knowledge bases with Supabase full-text search
 
 #### 14.2 Enterprise Administration
 
 - [ ] Build admin dashboard and controls
-- [ ] Implement SSO integration (SAML, OIDC)
-- [ ] Add enterprise security features
-- [ ] Create user provisioning and deprovisioning
-- [ ] Implement data governance tools
-- [ ] Add compliance reporting features
+- [ ] Implement SSO integration (SAML, OIDC) via Supabase Auth
+- [ ] Add enterprise security features with Supabase security
+- [ ] Create user provisioning and deprovisioning with Supabase Auth API
+- [ ] Implement data governance tools with Supabase RLS and policies
+- [ ] Add compliance reporting features with Supabase audit logs
 
 ---
 
@@ -507,15 +542,38 @@ This document provides a comprehensive task breakdown for implementing the Conte
 2. **AI Integration**
    - Always implement fallbacks for serverless timeouts
    - Monitor API costs and usage with Vercel Analytics
-   - Cache embeddings aggressively using Upstash Redis
+   - Cache embeddings in Supabase with pgvector (or Upstash Redis for advanced caching)
    - Handle API failures gracefully with retry logic
-   - Optimize for Edge Runtime compatibility
+   - Optimize for Edge Runtime compatibility with Supabase Edge Functions
 
 3. **Database Changes**
    - All schema changes via migrations
    - Backward compatibility for 1 version
    - Performance impact assessment
    - Production deployment plan
+
+### Migration Considerations
+
+**From Existing PostgreSQL**:
+
+- Use Supabase CLI to migrate existing schemas and data
+- Leverage `pg_dump` and `pg_restore` for seamless migration
+- Configure Row Level Security policies to replace application-level auth
+- Update connection strings to use Supabase pooler for serverless optimization
+
+**From Other Providers**:
+
+- **Neon/PlanetScale → Supabase**: Direct PostgreSQL migration with schema export
+- **Firebase → Supabase**: Use Supabase migration tools for Firestore to PostgreSQL
+- **AWS RDS → Supabase**: Standard PostgreSQL dump/restore process
+- **MongoDB → Supabase**: Custom migration scripts for document to relational mapping
+
+**Development Workflow**:
+
+- Use Supabase local development with Docker for offline development
+- Leverage Supabase CLI for schema management and type generation
+- Set up branch-based database environments for feature development
+- Configure CI/CD pipeline with Supabase migrations
 
 ### Risk Mitigation Strategies
 
@@ -584,11 +642,12 @@ This document provides a comprehensive task breakdown for implementing the Conte
 
 ### Technology Investment (60-70% Cost Reduction vs Traditional Architecture)
 
-- **AI/ML Services**: OpenAI API (~$200/month), Pinecone vector database (~$70/month)
-- **Infrastructure**: Vercel Pro (~$20/month), Neon PostgreSQL (~$25/month), Upstash Redis (~$15/month)
+- **AI/ML Services**: OpenAI API (~$200/month)
+- **Infrastructure**: Vercel Pro (~$20/month), Supabase Pro (~$25/month)
+- **Optional Caching**: Upstash Redis (~$15/month, only if needed for advanced caching)
 - **Monitoring**: Vercel Analytics (included), Sentry (~$26/month), PostHog (~$450/month at scale)
 - **Development Tools**: GitHub (~$4/user), Linear (~$8/user), Figma (~$12/user)
-- **Total Estimated Monthly Cost**: ~$830/month (vs ~$2,500/month for separate frontend/backend infrastructure)
+- **Total Estimated Monthly Cost**: ~$745/month (vs ~$2,500/month for separate frontend/backend infrastructure)
 
 ### Infrastructure Cost Comparison
 
@@ -601,11 +660,12 @@ This document provides a comprehensive task breakdown for implementing the Conte
 - Redis hosting: $50/month
 - **Estimated Total**: $2,500+/month
 
-**Unified Architecture**:
+**Unified Architecture with Supabase**:
 
 - Single Vercel deployment: $20/month
-- Managed services (Neon + Upstash + Pinecone): $110/month
-- **Estimated Total**: $830/month (67% reduction)
+- Supabase Pro (database + auth + realtime + vector): $25/month
+- **Estimated Total**: $745/month (70% reduction)
+- **Additional Savings**: $85/month vs previous Neon + Upstash + Pinecone approach
 
 ## Unified Architecture Advantages
 
