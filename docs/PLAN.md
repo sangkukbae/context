@@ -1,0 +1,721 @@
+# Context Implementation Plan - Task Breakdown
+
+## Overview
+
+This document provides a comprehensive task breakdown for implementing the Context AI-powered note-taking application based on the PRD. The plan is organized into phases with clear dependencies, technical implementation steps, and priority markers.
+
+**Architecture Note**: This plan uses a unified Next.js 15+ App Router + Hono.js architecture for faster development (30-40% timeline reduction), simplified deployment, and reduced infrastructure costs (60-70% reduction) compared to traditional separated frontend/backend approaches.
+
+## Technology Stack Overview
+
+**Unified Full-Stack Framework**:
+
+- **Frontend & Backend**: Next.js 15+ with App Router + Hono.js for API routes
+- **API Architecture**: Single codebase with `app/api/[...route]/route.ts` pattern
+- **Language**: TypeScript throughout with shared types
+
+**UI Component Framework**:
+
+- **Base Components**: shadcn/ui (Radix UI primitives + Tailwind CSS) - 90% of UI components
+- **Animations**: Aceternity UI (Framer Motion animations) - 10% for key UX moments
+- **Styling**: Tailwind CSS for utility-first styling
+- **Benefits**: 60-70% reduction in UI development time, zero runtime overhead with shadcn/ui
+
+**External Managed Services**:
+
+- **Database**: Neon PostgreSQL (serverless, auto-scaling)
+- **Cache & Sessions**: Upstash Redis (edge-optimized)
+- **Vector Database**: Pinecone (AI embeddings)
+- **Background Jobs**: Vercel Queue Functions or Cloudflare Queues
+
+**Infrastructure**:
+
+- **Deployment**: Vercel (unified full-stack deployment)
+- **Package Manager**: pnpm (60-70% faster installs, reduced disk usage)
+- **Monitoring**: Vercel Analytics + Sentry
+- **Development**: Single repository, shared utilities
+
+**Key Benefits**:
+
+- 30-40% faster development (no API coordination overhead)
+- 60-70% lower infrastructure costs (single deployment)
+- pnpm provides 60-70% faster dependency management
+- Type-safe end-to-end development
+- Simplified debugging and testing
+- Edge-optimized performance
+
+## Phase Structure
+
+- **Phase 1**: Foundation & MVP (P0 Features) - Months 1-2 (accelerated with unified architecture)
+- **Phase 2**: Enhanced Features (P1 Features) - Months 3-4 (faster iteration cycle)
+- **Phase 3**: Future Enhancements (P2 Features) - Months 5+ (reduced complexity)
+
+## Phase 1: Foundation & MVP (P0 Features)
+
+### 1. Project Setup & Infrastructure
+
+**Priority: CRITICAL** | **Dependencies: None** | **Complexity: Medium**
+
+#### 1.1 Development Environment Setup
+
+- [ ] Initialize Next.js 15+ project with App Router and TypeScript
+- [ ] Set up Hono.js integration for unified API routes
+- [ ] Configure Tailwind CSS for styling
+- [ ] Install and configure shadcn/ui components library
+- [ ] Set up shadcn/ui CLI for component installation (`pnpm dlx shadcn@latest init`)
+- [ ] Configure components.json for shadcn/ui customization
+- [ ] Set up ESLint, Prettier, and pre-commit hooks
+- [ ] Configure shared TypeScript types across frontend/backend
+- [ ] Set up environment variable management for unified deployment
+- [ ] Initialize Git repository with proper .gitignore
+
+#### 1.2 Database Architecture
+
+- [ ] Set up Neon PostgreSQL as managed database service
+- [ ] Design PostgreSQL schema for users, notes, clusters, documents
+- [ ] Set up Prisma ORM with initial migrations for Edge Runtime compatibility
+- [ ] Create database indexes for performance
+- [ ] Configure Upstash Redis for caching and sessions
+- [ ] Set up connection pooling optimized for serverless environments
+
+#### 1.3 Unified API Foundation
+
+- [ ] Set up Hono.js app in app/api/[...route]/route.ts for unified API handling
+- [ ] Configure security middleware with Hono.js (helmet, rate limiting)
+- [ ] Set up request validation with Zod schemas shared across frontend/backend
+- [ ] Configure error handling and structured logging for serverless
+- [ ] Implement health check endpoints via Hono.js routes
+- [ ] Set up edge-compatible rate limiting with Upstash Rate Limiting
+
+#### 1.4 Deployment Infrastructure
+
+- [ ] Configure Vercel for unified full-stack deployment (frontend + API)
+- [ ] Set up Neon PostgreSQL production database with connection pooling
+- [ ] Configure Upstash Redis for production caching and sessions
+- [ ] Set up Pinecone vector database for AI embeddings
+- [ ] Configure environment variables for single deployment
+- [ ] Set up monitoring with Vercel Analytics, Sentry, and structured logging
+
+### 2. Basic Authentication & User Management (P0-5)
+
+**Priority: HIGH** | **Dependencies: 1.1-1.4** | **Complexity: Medium**
+
+#### 2.1 Authentication System
+
+- [ ] Implement NextAuth.js with multiple providers
+- [ ] Configure Google OAuth integration
+- [ ] Configure GitHub OAuth integration
+- [ ] Configure Apple Sign-In (optional for MVP)
+- [ ] Set up JWT token management
+- [ ] Implement session management with Redis
+
+#### 2.2 User Profile & Settings
+
+- [ ] Create user model and database schema
+- [ ] Implement user registration flow
+- [ ] Build basic profile management UI
+- [ ] Add basic privacy settings interface
+- [ ] Implement account deletion functionality
+- [ ] Create data export functionality
+
+#### 2.3 Cross-Device Sync Foundation
+
+- [ ] Design sync architecture and conflict resolution for unified deployment
+- [ ] Implement WebSocket support via Hono.js for real-time updates
+- [ ] Create client-side sync state management with Next.js state
+- [ ] Build offline-first data layer with shared TypeScript types
+- [ ] Implement basic conflict resolution algorithm
+- [ ] Add sync status indicators in UI
+
+### 3. The Log - Core Capture System (P0-1)
+
+**Priority: CRITICAL** | **Dependencies: 2.1-2.3** | **Complexity: High**
+
+#### 3.1 Note Data Model
+
+- [ ] Design note schema (id, content, timestamp, user_id, metadata)
+- [ ] Implement note creation API routes via Hono.js
+- [ ] Create note retrieval with pagination using Hono.js handlers
+- [ ] Add note editing and deletion API routes
+- [ ] Implement soft delete for data recovery
+- [ ] Add note metadata tracking (word count, etc.)
+
+#### 3.2 Log Interface Components
+
+- [ ] Build note input component with auto-focus using shadcn/ui Input component
+- [ ] Create infinite scroll note feed with shadcn/ui ScrollArea and DataTable
+- [ ] Implement real-time note updates via Hono.js WebSocket integration
+- [ ] Add timestamp display with relative formatting
+- [ ] Build note actions (edit, delete, select) using shadcn/ui Button and DropdownMenu
+- [ ] Implement optimistic UI updates
+- [ ] Add subtle Aceternity UI fade-in animations for new notes (performance-first)
+
+#### 3.3 Performance Optimization
+
+- [ ] Implement virtual scrolling for large note lists
+- [ ] Add client-side caching with React Query
+- [ ] Optimize database queries with proper indexing
+- [ ] Implement note content compression
+- [ ] Add lazy loading for note content
+- [ ] Monitor and optimize render performance
+
+### 4. Basic Search Functionality (P0-2 Foundation)
+
+**Priority: HIGH** | **Dependencies: 3.1-3.3** | **Complexity: Medium**
+
+#### 4.1 Keyword Search Implementation
+
+- [ ] Set up PostgreSQL full-text search
+- [ ] Implement search API routes via Hono.js
+- [ ] Create search input component with debouncing
+- [ ] Add search result highlighting
+- [ ] Implement search history tracking
+- [ ] Add search filters (date range, etc.)
+
+#### 4.2 Search UI/UX
+
+- [ ] Build search results interface using shadcn/ui Command component
+- [ ] Add search suggestions and autocomplete with shadcn/ui Popover
+- [ ] Implement search result pagination
+- [ ] Create search context preservation
+- [ ] Add keyboard shortcuts for search (Ctrl+F, Ctrl+K) with shadcn/ui Kbd component
+- [ ] Build advanced search options panel with shadcn/ui Dialog
+- [ ] Add Aceternity UI search result animations for smooth transitions
+
+### 5. AI Integration Pipeline (P0-3 & P0-2 Enhancement)
+
+**Priority: CRITICAL** | **Dependencies: 4.1-4.2** | **Complexity: Very High**
+
+#### 5.1 Vector Embedding System
+
+- [ ] Set up OpenAI API integration
+- [ ] Implement text embedding generation pipeline
+- [ ] Configure Pinecone vector database (managed service)
+- [ ] Create embedding sync using Vercel Queue Functions or external queue service
+- [ ] Implement incremental embedding updates
+- [ ] Add embedding quality monitoring
+
+#### 5.2 Semantic Search
+
+- [ ] Build vector similarity search
+- [ ] Implement hybrid search (keyword + semantic)
+- [ ] Create search result ranking algorithm
+- [ ] Add semantic search API routes via Hono.js
+- [ ] Integrate semantic search into frontend
+- [ ] Optimize search performance and caching
+
+#### 5.3 Auto-Clustering Algorithm
+
+- [ ] Implement cosine similarity clustering
+- [ ] Create batch processing for cluster generation using Vercel Cron Jobs or Queue Functions
+- [ ] Design cluster quality scoring system
+- [ ] Implement dynamic cluster updates
+- [ ] Add cluster suggestion API routes via Hono.js
+- [ ] Create cluster validation and filtering
+
+### 6. Cluster Management & Suggestions (P0-3)
+
+**Priority: HIGH** | **Dependencies: 5.1-5.3** | **Complexity: High**
+
+#### 6.1 Cluster Data Model
+
+- [ ] Design cluster schema and relationships
+- [ ] Implement cluster CRUD operations
+- [ ] Create cluster-note relationship management
+- [ ] Add cluster metadata (creation date, confidence score)
+- [ ] Implement cluster lifecycle management
+- [ ] Add cluster performance tracking
+
+#### 6.2 Cluster Suggestion UI
+
+- [ ] Build cluster suggestion notification system using shadcn/ui Toast
+- [ ] Create cluster preview modal/interface with shadcn/ui Card components
+- [ ] Implement cluster acceptance/dismissal actions with shadcn/ui Button
+- [ ] Add cluster quality indicators using shadcn/ui Badge and Progress
+- [ ] Build cluster management dashboard with shadcn/ui DataTable
+- [ ] Create cluster suggestion settings with shadcn/ui Form components
+- [ ] Add Aceternity UI CardStack animations for cluster presentations
+
+### 7. Document Promotion System (P0-4)
+
+**Priority: HIGH** | **Dependencies: 6.1-6.2** | **Complexity: High**
+
+#### 7.1 Document Data Model
+
+- [ ] Design document schema and versioning
+- [ ] Implement document CRUD API routes via Hono.js
+- [ ] Create document-note relationship tracking
+- [ ] Add document metadata and status
+- [ ] Implement document access control
+- [ ] Add document search and discovery
+
+#### 7.2 AI Document Generation
+
+- [ ] Implement OpenAI GPT-4 integration for document creation
+- [ ] Create document structure generation prompts
+- [ ] Build document content synthesis from notes
+- [ ] Implement document quality scoring
+- [ ] Add document generation status tracking
+- [ ] Create fallback templates for AI failures
+
+#### 7.3 Document Promotion UI
+
+- [ ] Build 1-click promotion interface with shadcn/ui Button and loading states
+- [ ] Create document preview before creation using shadcn/ui Dialog
+- [ ] Implement document editing interface (basic) with shadcn/ui Textarea
+- [ ] Add document save and versioning with shadcn/ui Form components
+- [ ] Build document organization (folders/tags) using shadcn/ui TreeView
+- [ ] Create document sharing preparation with shadcn/ui Sheet
+- [ ] Add Aceternity UI promotion transition animations for smooth cluster-to-document flow
+
+### 8. MVP Testing & Polish
+
+**Priority: CRITICAL** | **Dependencies: All P0 tasks** | **Complexity: Medium**
+
+#### 8.1 Performance Optimization
+
+- [ ] Optimize database queries and indexing
+- [ ] Implement caching strategies
+- [ ] Add performance monitoring and alerting
+- [ ] Optimize AI API usage and costs
+- [ ] Implement lazy loading and code splitting
+- [ ] Monitor and optimize Core Web Vitals
+
+#### 8.2 User Experience Polish
+
+- [ ] Implement comprehensive error handling with shadcn/ui Alert components
+- [ ] Add loading states and skeleton screens using shadcn/ui Skeleton
+- [ ] Create user onboarding flow with shadcn/ui Stepper (Phase 1: shadcn/ui only)
+- [ ] Implement keyboard shortcuts with shadcn/ui command palette
+- [ ] Add accessibility features (a11y) - built into shadcn/ui Radix primitives
+- [ ] Mobile-responsive design testing with Tailwind responsive utilities
+- [ ] Phase 2: Selectively add Aceternity UI animations after performance benchmarking
+
+#### 8.3 Quality Assurance
+
+- [ ] Write unit tests for core functionality
+- [ ] Implement integration tests for Hono.js API routes
+- [ ] Create end-to-end tests for user flows
+- [ ] Set up automated testing pipeline
+- [ ] Conduct security audit and penetration testing
+- [ ] Perform load testing and stress testing
+
+---
+
+## Phase 2: Enhanced Features (P1 Features)
+
+### 9. Enhanced Document Editor (P1-6)
+
+**Priority: MEDIUM** | **Dependencies: Phase 1 Complete** | **Complexity: High**
+
+#### 9.1 Rich Text Editor Implementation
+
+- [ ] Integrate rich text editor (TipTap, Slate.js, or similar)
+- [ ] Implement Markdown support and parsing
+- [ ] Add formatting toolbar using shadcn/ui Toolbar components
+- [ ] Create code block syntax highlighting with shadcn/ui code components
+- [ ] Implement list formatting and nesting
+- [ ] Add table creation and editing with shadcn/ui Table components
+- [ ] Add Aceternity UI subtle toolbar animations for enhanced UX
+
+#### 9.2 Advanced Editor Features
+
+- [ ] Implement internal linking system between documents
+- [ ] Add image upload and embedding
+- [ ] Create file attachment functionality
+- [ ] Implement real-time collaborative editing foundation
+- [ ] Add document outline/table of contents
+- [ ] Create document templates system
+
+#### 9.3 Editor UI/UX
+
+- [ ] Design and implement editor toolbar
+- [ ] Add formatting keyboard shortcuts
+- [ ] Create document preview mode
+- [ ] Implement document auto-save
+- [ ] Add version history interface
+- [ ] Build document export options (PDF, MD, HTML)
+
+### 10. Manual Organization Tools (P1-7)
+
+**Priority: MEDIUM** | **Dependencies: 9.1-9.3** | **Complexity: Medium**
+
+#### 10.1 Advanced Cluster Management
+
+- [ ] Implement drag-and-drop cluster editing
+- [ ] Create manual note selection for clustering
+- [ ] Build cluster editing interface
+- [ ] Add cluster splitting and merging
+- [ ] Implement cluster labeling and naming
+- [ ] Create cluster quality feedback system
+
+#### 10.2 Tagging and Organization
+
+- [ ] Implement tag system for notes and documents
+- [ ] Create tag autocomplete and suggestions
+- [ ] Build tag-based filtering and search
+- [ ] Implement hierarchical tag structure
+- [ ] Add bulk tagging operations
+- [ ] Create tag analytics and usage stats
+
+#### 10.3 Folder and Workspace Organization
+
+- [ ] Design folder/workspace data model
+- [ ] Implement folder CRUD operations
+- [ ] Create folder navigation interface
+- [ ] Add drag-and-drop folder organization
+- [ ] Implement folder permissions and access
+- [ ] Build folder search and filtering
+
+### 11. Sharing and Collaboration (P1-8)
+
+**Priority: MEDIUM** | **Dependencies: 10.1-10.3** | **Complexity: High**
+
+#### 11.1 Document Sharing System
+
+- [ ] Implement read-only sharing links
+- [ ] Create share link generation and management
+- [ ] Add share link expiration and permissions
+- [ ] Implement password protection for shares
+- [ ] Build shared document access tracking
+- [ ] Create share link revocation system
+
+#### 11.2 Comment and Feedback System
+
+- [ ] Design comment data model and Hono.js API routes
+- [ ] Implement comment creation and threading
+- [ ] Create comment UI with inline annotations
+- [ ] Add comment notifications and mentions
+- [ ] Implement comment moderation tools
+- [ ] Build comment search and filtering
+
+#### 11.3 Basic Team Workspaces
+
+- [ ] Design team/workspace data model
+- [ ] Implement team invitation system
+- [ ] Create workspace permission management
+- [ ] Build team member management interface
+- [ ] Implement workspace-level settings
+- [ ] Add workspace activity feeds
+
+---
+
+## Phase 3: Future Enhancements (P2 Features)
+
+### 12. Advanced AI Features (P2-9)
+
+**Priority: LOW** | **Dependencies: Phase 2 Complete** | **Complexity: Very High**
+
+#### 12.1 Advanced Analytics
+
+- [ ] Implement trend analysis across time periods
+- [ ] Create insight generation from note patterns
+- [ ] Build productivity analytics dashboard
+- [ ] Add writing habit tracking
+- [ ] Implement knowledge growth metrics
+- [ ] Create AI-powered writing suggestions
+
+#### 12.2 Smart Automation
+
+- [ ] Build automated summary generation
+- [ ] Implement smart notification system
+- [ ] Create question-answering over note corpus
+- [ ] Add predictive text and autocompletion
+- [ ] Implement smart content recommendations
+- [ ] Build automated workflow triggers
+
+### 13. Integration Ecosystem (P2-10)
+
+**Priority: LOW** | **Dependencies: 12.1-12.2** | **Complexity: High**
+
+#### 13.1 Third-Party Integrations
+
+- [ ] Build Slack bot for quick capture
+- [ ] Create Discord integration
+- [ ] Implement Notion export/sync
+- [ ] Add Obsidian data format export
+- [ ] Create Zapier/IFTTT connectors
+- [ ] Build email-to-note functionality
+
+#### 13.2 API Ecosystem
+
+- [ ] Design and build public REST API
+- [ ] Create comprehensive API documentation
+- [ ] Implement API authentication and rate limiting
+- [ ] Build developer portal and tools
+- [ ] Create SDK libraries for popular languages
+- [ ] Add webhook system for integrations
+
+### 14. Enterprise Team Collaboration (P2-11)
+
+**Priority: LOW** | **Dependencies: 13.1-13.2** | **Complexity: Very High**
+
+#### 14.1 Advanced Team Features
+
+- [ ] Implement shared logs for teams
+- [ ] Create real-time collaborative editing
+- [ ] Build team analytics and insights
+- [ ] Add advanced permission management
+- [ ] Implement audit logs and compliance
+- [ ] Create team knowledge bases
+
+#### 14.2 Enterprise Administration
+
+- [ ] Build admin dashboard and controls
+- [ ] Implement SSO integration (SAML, OIDC)
+- [ ] Add enterprise security features
+- [ ] Create user provisioning and deprovisioning
+- [ ] Implement data governance tools
+- [ ] Add compliance reporting features
+
+---
+
+## Implementation Guidelines
+
+### Technical Standards
+
+1. **Code Quality**
+   - TypeScript for all code with shared types between frontend/API
+   - Unit test coverage >80%
+   - Integration tests for all Hono.js API routes
+   - ESLint and Prettier enforcement
+   - Unified codebase benefits: better type safety and code reuse
+
+2. **Performance Requirements**
+   - Note input lag <200ms
+   - Search results <500ms (keyword), <2s (semantic)
+   - AI processing in background jobs
+   - Optimize for Core Web Vitals
+
+3. **Security Standards**
+   - Input validation on all endpoints
+   - SQL injection prevention
+   - XSS protection
+   - CSRF protection (built into Next.js)
+   - Rate limiting on all API routes
+
+### Development Workflow
+
+1. **Feature Development**
+   - Create feature branch from main
+   - Implement unified API routes and frontend components together
+   - Add comprehensive tests for both frontend and API logic
+   - Leverage shared TypeScript types and utilities
+   - Code review before merge
+   - **Timeline Benefit**: 30-40% faster development due to unified codebase
+
+2. **AI Integration**
+   - Always implement fallbacks for serverless timeouts
+   - Monitor API costs and usage with Vercel Analytics
+   - Cache embeddings aggressively using Upstash Redis
+   - Handle API failures gracefully with retry logic
+   - Optimize for Edge Runtime compatibility
+
+3. **Database Changes**
+   - All schema changes via migrations
+   - Backward compatibility for 1 version
+   - Performance impact assessment
+   - Production deployment plan
+
+### Risk Mitigation Strategies
+
+1. **Technical Risks**
+   - Implement feature flags for gradual rollouts
+   - Create comprehensive monitoring and alerting
+   - Maintain detailed error logging
+   - Regular security audits
+
+2. **AI Quality Risks**
+   - User feedback loops for cluster quality
+   - A/B testing for algorithm improvements
+   - Confidence thresholds for AI suggestions
+   - Human review processes for quality control
+
+3. **Performance Risks**
+   - Load testing before major releases
+   - Database query optimization monitoring
+   - CDN implementation for static assets
+   - Horizontal scaling preparation
+
+---
+
+## Success Metrics by Phase
+
+### Phase 1 MVP Success Criteria
+
+- 1,000+ registered users
+- 70%+ 1-week retention rate
+- 20%+ cluster promotion rate
+- <2s average search response time
+- 99.5% uptime
+
+### Phase 2 Enhancement Success Criteria
+
+- 10,000+ Monthly Active Users
+- 5%+ free-to-paid conversion rate
+- 50+ Net Promoter Score
+- 30%+ document creation rate
+- Advanced editor adoption >60%
+
+### Phase 3 Scale Success Criteria
+
+- 100,000+ Monthly Active Users
+- $100K+ Monthly Recurring Revenue
+- Enterprise customer acquisition
+- API ecosystem adoption
+- Team collaboration feature usage >40%
+
+---
+
+## Resource Allocation
+
+### Development Team Structure
+
+- **Phase 1**: 1-2 Full-stack developers + 1 AI/ML engineer (reduced due to unified architecture + UI framework acceleration)
+- **Phase 2**: 2-3 Full-stack developers + 1 AI/ML engineer (simplified deployment reduces DevOps needs)
+- **Phase 3**: 3-4 Full-stack developers + 2 AI/ML engineers + 1 QA (60-70% team size reduction)
+
+**Development Acceleration Benefits**:
+
+- **pnpm**: 60-70% faster dependency installs, improved CI/CD performance
+- **shadcn/ui**: 60-70% reduction in component development time
+- **Aceternity UI**: 80-90% reduction in animation implementation time
+- **Combined strategy**: Saves 4-6 weeks on P0/P1 features with improved developer experience
+
+### Technology Investment (60-70% Cost Reduction vs Traditional Architecture)
+
+- **AI/ML Services**: OpenAI API (~$200/month), Pinecone vector database (~$70/month)
+- **Infrastructure**: Vercel Pro (~$20/month), Neon PostgreSQL (~$25/month), Upstash Redis (~$15/month)
+- **Monitoring**: Vercel Analytics (included), Sentry (~$26/month), PostHog (~$450/month at scale)
+- **Development Tools**: GitHub (~$4/user), Linear (~$8/user), Figma (~$12/user)
+- **Total Estimated Monthly Cost**: ~$830/month (vs ~$2,500/month for separate frontend/backend infrastructure)
+
+### Infrastructure Cost Comparison
+
+**Traditional Separated Architecture**:
+
+- Frontend hosting (Vercel): $20/month
+- Backend hosting (Railway/Render): $50-100/month
+- Load balancer: $25/month
+- Separate database instances: $100-200/month
+- Redis hosting: $50/month
+- **Estimated Total**: $2,500+/month
+
+**Unified Architecture**:
+
+- Single Vercel deployment: $20/month
+- Managed services (Neon + Upstash + Pinecone): $110/month
+- **Estimated Total**: $830/month (67% reduction)
+
+## Unified Architecture Advantages
+
+**Development Speed**:
+
+- **pnpm**: 60-70% faster dependency management and installation
+- Shared TypeScript types eliminate API contract mismatches
+- Single codebase reduces context switching between frontend/backend
+- Unified deployment pipeline reduces DevOps overhead
+- Shared utilities and business logic reduce duplication
+- shadcn/ui component library reduces UI development by 60-70%
+- Aceternity UI animations save 80-90% on motion design implementation
+
+**Cost Efficiency**:
+
+- **pnpm**: Reduced disk usage and faster CI/CD builds (lower compute costs)
+- Single Vercel deployment vs separate frontend/backend hosting
+- Managed services eliminate infrastructure maintenance overhead
+- Serverless architecture scales to zero when unused
+- Edge optimization reduces data transfer costs
+
+**Operational Benefits**:
+
+- **pnpm**: Improved dependency resolution and reduced phantom dependencies
+- Single monitoring dashboard for full-stack observability
+- Simplified debugging with unified stack traces
+- Single security model and authentication flow
+- Reduced deployment complexity and failure points
+
+## UI Component Strategy
+
+### Component Library Selection
+
+**shadcn/ui (90% of UI Components)**:
+
+- **Foundation**: All structural components (forms, tables, navigation)
+- **Benefits**: Zero runtime overhead, full customization, built-in accessibility
+- **Components for Context**:
+  - DataTable + ScrollArea: The Log infinite scroll
+  - Command + Popover: Magic Search interface
+  - Card + Badge: Cluster suggestions
+  - Form components: Authentication and settings
+  - Dialog + Sheet: Modals and side panels
+
+**Aceternity UI (10% for Key UX Moments)**:
+
+- **Usage**: Selective animation enhancements
+- **Components for Context**:
+  - CardStack: Cluster suggestion presentations
+  - Fade-in animations: New note appearances
+  - Smooth transitions: Cluster-to-document promotion
+  - Search result animations: Enhanced search UX
+- **Performance Note**: Add only after Phase 1 performance benchmarking
+
+### Implementation Guidelines
+
+**Phase 1 (MVP): shadcn/ui Only**
+
+- Focus on functionality and performance
+- Establish component patterns and design system
+- Ensure <200ms input lag requirement is met
+- Build accessibility-first with Radix UI primitives
+
+**Phase 2 (Polish): Selective Aceternity UI**
+
+- Add animations after performance benchmarking
+- A/B test animation impact on user engagement
+- Implement motion preferences (prefers-reduced-motion)
+- Monitor bundle size impact (target <30KB addition)
+
+### Performance Optimization
+
+**shadcn/ui Advantages**:
+
+- Copy-paste architecture: No framework overhead
+- Tree-shakable: Only ship used components
+- Optimized for React Server Components
+- TanStack Table virtualization for large datasets
+
+**Aceternity UI Considerations**:
+
+- Lazy-load Framer Motion only where needed
+- Use CSS animations for simple transitions
+- Implement progressive enhancement strategy
+- Monitor Core Web Vitals impact
+
+## Package Management Strategy
+
+### pnpm Migration Benefits
+
+**Performance Improvements**:
+
+- **Installation Speed**: 60-70% faster than npm for dependency management
+- **Disk Space**: ~35% reduction in lockfile size, optimized node_modules structure
+- **CI/CD**: Faster builds with pnpm caching in GitHub Actions
+- **Developer Experience**: Improved dependency resolution and fewer phantom dependencies
+
+**Tool Compatibility**:
+
+- ✅ **Next.js 15**: Full compatibility with App Router and React 19
+- ✅ **shadcn/ui CLI**: Enhanced compatibility (`pnpm dlx shadcn@latest add <component>`)
+- ✅ **ESLint/Prettier**: Seamless integration with existing configurations
+- ✅ **Vercel Deployment**: Auto-detection and optimized caching
+- ✅ **Husky/lint-staged**: Pre-commit hooks work perfectly with pnpm scripts
+
+**Migration Status**: ✅ **COMPLETED**
+
+- All npm artifacts removed and replaced with pnpm
+- GitHub Actions workflows updated for pnpm
+- Documentation updated with pnpm commands
+- All tooling verified and functioning correctly
+
+This implementation plan provides a comprehensive roadmap for building Context from MVP to enterprise-scale product, with clear dependencies, technical requirements, and success metrics at each phase. The unified architecture approach combined with strategic UI framework selection and optimized package management accelerates development while reducing costs and operational complexity.
