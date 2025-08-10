@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+dist/
+build/
+*.log
+.DS_Store
+.env*
+.vscode/
+.idea/
+coverage/
+*.tsbuildinfo
+public/
+docs/.github_backup/
