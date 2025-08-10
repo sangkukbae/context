@@ -88,7 +88,12 @@ function parseEnv() {
     return envSchema.parse(process.env)
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error('❌ Environment validation failed!')
+      const errorMessage = '❌ Environment validation failed!'
+      const issues = error.issues
+        .map(issue => `${issue.path.join('.')}: ${issue.message}`)
+        .join(', ')
+
+      console.error(errorMessage)
       console.error('Issues found:')
       error.issues.forEach(issue => {
         console.error(`  - ${issue.path.join('.')}: ${issue.message}`)
@@ -97,7 +102,8 @@ function parseEnv() {
       console.error('\nPlease check your .env files and update them accordingly.')
       console.error('See .env.example for reference.\n')
 
-      process.exit(1)
+      // Throw error instead of process.exit to allow graceful handling
+      throw new Error(`Environment validation failed: ${issues}`)
     }
     throw error
   }

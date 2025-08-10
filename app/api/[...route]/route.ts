@@ -1,14 +1,16 @@
 import { Hono } from 'hono'
 import { handle } from 'hono/vercel'
 import type { ApiResponse } from '@/lib/types'
-import { env, isDevelopment, validateRequiredServices } from '@/lib/env'
+import { env, isProduction, validateRequiredServices } from '@/lib/env'
 
-// Validate required services on startup
-if (isDevelopment) {
-  try {
-    validateRequiredServices()
-  } catch (error) {
-    console.error('Environment validation failed:', error)
+// Validate required services on startup - run in all environments
+try {
+  validateRequiredServices()
+} catch (error) {
+  console.error('Environment validation failed:', error)
+  // In production, log the error but don't crash the app
+  if (isProduction) {
+    console.error('⚠️  Running with degraded functionality due to missing services')
   }
 }
 
@@ -54,7 +56,7 @@ app.onError((err, c) => {
   const errorResponse: ApiResponse = {
     success: false,
     error: 'Internal Server Error',
-    message: err.message,
+    message: isProduction ? 'Something went wrong' : err.message,
     timestamp: new Date().toISOString(),
   }
 
