@@ -169,6 +169,28 @@ pnpm pre-commit   # Run lint-staged manually
 - Environment validation prevents misconfiguration
 - Service availability checks for external dependencies
 
+## Reference Documentation
+
+Comprehensive reference documentation is available in the `/ref` directory:
+
+### 📚 Core References
+
+- **[API Reference](/ref/api-reference.md)** - Complete API endpoint documentation including health checks, notes, search, clusters, and documents
+- **[Database Reference](/ref/database-reference.md)** - PostgreSQL schema, Supabase integration, Prisma ORM, and vector operations
+- **[Components Reference](/ref/components-reference.md)** - shadcn/ui component library, custom components, and usage patterns
+- **[Type Definitions](/ref/type-definitions.md)** - Comprehensive TypeScript type system including API, database, and UI types
+
+### 🔍 Specialized References
+
+- **[Monitoring Reference](/ref/monitoring-reference.md)** - Vercel Analytics, Sentry error tracking, health monitoring, and alerting
+- **[Testing Reference](/ref/testing-reference.md)** - Playwright E2E testing, test patterns, fixtures, and CI/CD
+
+### 🚀 Quick Access
+
+- **[Reference Overview](/ref/README.md)** - Navigation guide and architecture overview
+
+These references provide detailed documentation for developers, operations teams, and QA engineers working with the Context application.
+
 ## Important Implementation Notes
 
 - This codebase uses a unified architecture to reduce complexity and deployment overhead
