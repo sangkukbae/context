@@ -5,15 +5,24 @@ const envSchema = z.object({
   // Node Environment
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 
-  // Database
+  // Database - Supabase PostgreSQL
   DATABASE_URL: z.string().url(),
   DIRECT_URL: z.string().url().optional(),
 
-  // Redis (Upstash)
+  // Supabase Configuration
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string(),
+
+  // Supabase Database Connection (for Prisma)
+  SUPABASE_DB_PASSWORD: z.string().optional(),
+
+  // Redis (Upstash) - Optional for advanced caching
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
 
-  // Pinecone Vector Database
+  // Vector Database - Using Supabase pgvector (replaces Pinecone)
+  // Keeping Pinecone for migration compatibility
   PINECONE_API_KEY: z.string().optional(),
   PINECONE_ENVIRONMENT: z.string().optional(),
   PINECONE_INDEX_NAME: z.string().default('context-vectors'),
@@ -23,7 +32,7 @@ const envSchema = z.object({
   OPENAI_MODEL: z.string().default('gpt-4'),
   OPENAI_EMBEDDING_MODEL: z.string().default('text-embedding-3-small'),
 
-  // NextAuth.js
+  // Authentication - Using Supabase Auth (NextAuth.js kept for compatibility)
   NEXTAUTH_URL: z.string().url(),
   NEXTAUTH_SECRET: z.string(),
 
@@ -124,6 +133,8 @@ export const features = {
 
 // Service availability checks
 export const services = {
+  hasSupabase: !!(env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+  hasSupabaseServiceRole: !!env.SUPABASE_SERVICE_ROLE_KEY,
   hasOpenAI: !!env.OPENAI_API_KEY,
   hasPinecone: !!(env.PINECONE_API_KEY && env.PINECONE_ENVIRONMENT),
   hasRedis: !!(env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN),
@@ -140,6 +151,14 @@ export const database = {
   url: env.DATABASE_URL,
   directUrl: env.DIRECT_URL,
 } as const
+
+export const supabase = services.hasSupabase
+  ? {
+      url: env.NEXT_PUBLIC_SUPABASE_URL,
+      anonKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
+    }
+  : null
 
 export const auth = {
   url: env.NEXTAUTH_URL,
@@ -194,13 +213,26 @@ export function validateRequiredServices() {
   const warnings: string[] = []
   const errors: string[] = []
 
+  // Check database
+  if (!services.hasSupabase) {
+    errors.push('Supabase configuration is missing - required for database and auth')
+  }
+
+  if (!services.hasSupabaseServiceRole) {
+    warnings.push('Supabase service role key is missing - some admin features will be limited')
+  }
+
   // Check AI features
   if (features.aiClustering && !services.hasOpenAI) {
     errors.push('AI clustering is enabled but OpenAI API key is missing')
   }
 
-  if (features.semanticSearch && !services.hasPinecone) {
-    errors.push('Semantic search is enabled but Pinecone configuration is missing')
+  if (features.semanticSearch && !services.hasSupabase) {
+    errors.push('Semantic search is enabled but requires Supabase pgvector extension')
+  }
+
+  if (features.semanticSearch && services.hasPinecone) {
+    warnings.push('Both Supabase pgvector and Pinecone are configured - using Supabase pgvector')
   }
 
   if (features.documentGeneration && !services.hasOpenAI) {
@@ -209,7 +241,7 @@ export function validateRequiredServices() {
 
   // Check caching
   if (!services.hasRedis) {
-    warnings.push('Redis is not configured - sessions and caching will use in-memory storage')
+    warnings.push('Redis is not configured - using Supabase built-in caching and sessions')
   }
 
   // Check monitoring
