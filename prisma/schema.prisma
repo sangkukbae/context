@@ -1,0 +1,337 @@
+// Prisma schema file for Context AI Note-Taking Application
+// This is your Prisma schema file for Supabase PostgreSQL with pgvector extension
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "fullTextSearchPostgres"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [uuidOssp(map: "uuid-ossp"), pgcrypto, vector]
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserSubscriptionPlan {
+  free
+  pro
+  team
+
+  @@map("user_subscription_plan")
+}
+
+enum UserSubscriptionStatus {
+  active
+  canceled
+  past_due
+
+  @@map("user_subscription_status")
+}
+
+enum ClusterStatus {
+  suggested
+  accepted
+  dismissed
+
+  @@map("cluster_status")
+}
+
+enum DocumentStatus {
+  draft
+  published
+  archived
+
+  @@map("document_status")
+}
+
+enum JobStatus {
+  pending
+  processing
+  completed
+  failed
+
+  @@map("job_status")
+}
+
+enum JobType {
+  embedding
+  clustering
+  document_generation
+
+  @@map("job_type")
+}
+
+// ============================================================================
+// CORE MODELS
+// ============================================================================
+
+model User {
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email         String    @unique
+  name          String?
+  avatar        String?
+  emailVerified DateTime? @map("email_verified") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // User preferences stored as JSONB
+  preferences Json @default("{ \"theme\": \"system\", \"autoSave\": true, \"notifications\": true, \"clusterSuggestions\": true }")
+
+  // Subscription information
+  subscriptionPlan             UserSubscriptionPlan    @default(free) @map("subscription_plan")
+  subscriptionStatus           UserSubscriptionStatus? @map("subscription_status")
+  subscriptionCurrentPeriodEnd DateTime?               @map("subscription_current_period_end") @db.Timestamptz
+
+  // Relations
+  notes        Note[]
+  clusters     Cluster[]
+  documents    Document[]
+  accounts     Account[]
+  sessions     Session[]
+  activityLogs ActivityLog[]
+  searchIndex  SearchIndex[]
+
+  @@map("users")
+}
+
+model Note {
+  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  content   String
+  userId    String   @map("user_id") @db.Uuid
+  clusterId String?  @map("cluster_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Metadata stored as JSONB
+  metadata Json @default("{ \"wordCount\": 0, \"characterCount\": 0, \"tags\": [] }")
+
+  // Vector embedding for semantic search (pgvector extension)
+  // Note: Prisma doesn't have native vector support yet, so we use Unsupported
+  embedding          Unsupported("vector(1536)")?
+  embeddingUpdatedAt DateTime?                    @map("embedding_updated_at") @db.Timestamptz
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cluster Cluster? @relation(fields: [clusterId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc)], name: "idx_notes_user_created")
+  @@index([clusterId], name: "idx_notes_cluster")
+  @@index([updatedAt(sort: Desc)], name: "idx_notes_updated")
+  @@index([userId], name: "idx_notes_user_content")
+  @@map("notes")
+}
+
+model Cluster {
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  title       String
+  description String?
+  userId      String   @map("user_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Cluster metrics
+  confidence Float @default(0.0)
+  noteCount  Int   @default(0) @map("note_count")
+  totalWords Int   @default(0) @map("total_words")
+  themes     Json  @default("[]")
+
+  // Suggestion lifecycle
+  suggestedAt DateTime?     @map("suggested_at") @db.Timestamptz
+  acceptedAt  DateTime?     @map("accepted_at") @db.Timestamptz
+  dismissedAt DateTime?     @map("dismissed_at") @db.Timestamptz
+  status      ClusterStatus @default(suggested)
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notes     Note[]
+  documents Document[]
+
+  @@index([userId, status], name: "idx_clusters_user_status")
+  @@index([userId, createdAt(sort: Desc)], name: "idx_clusters_user_created")
+  @@index([suggestedAt], name: "idx_clusters_suggested_at")
+  @@map("clusters")
+}
+
+model Document {
+  id        String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  title     String
+  content   String
+  userId    String         @map("user_id") @db.Uuid
+  clusterId String?        @map("cluster_id") @db.Uuid
+  status    DocumentStatus @default(draft)
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Document metrics
+  wordCount   Int  @default(0) @map("word_count")
+  readingTime Int  @default(0) @map("reading_time")
+  tags        Json @default("[]")
+  version     Int  @default(1)
+
+  // Sharing configuration
+  isPublic          Boolean   @default(false) @map("is_public")
+  shareId           String?   @unique @map("share_id")
+  allowComments     Boolean   @default(false) @map("allow_comments")
+  shareExpiresAt    DateTime? @map("share_expires_at") @db.Timestamptz
+  sharePasswordHash String?   @map("share_password_hash")
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cluster Cluster? @relation(fields: [clusterId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status], name: "idx_documents_user_status")
+  @@index([clusterId], name: "idx_documents_cluster")
+  @@index([shareId], name: "idx_documents_share_id")
+  @@index([isPublic], name: "idx_documents_public")
+  @@index([userId, createdAt(sort: Desc)], name: "idx_documents_user_created")
+  @@map("documents")
+}
+
+// ============================================================================
+// AUTHENTICATION MODELS (NextAuth.js compatible)
+// ============================================================================
+
+model Account {
+  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  type              String
+  provider          String
+  providerAccountId String   @map("provider_account_id")
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId], name: "idx_accounts_user_id")
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id") @db.Uuid
+  expires      DateTime @db.Timestamptz
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "idx_sessions_user_id")
+  @@index([sessionToken], name: "idx_sessions_token")
+  @@index([expires], name: "idx_sessions_expires")
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime @db.Timestamptz
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================================================
+// SEARCH AND ACTIVITY MODELS
+// ============================================================================
+
+model SearchIndex {
+  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  entityId   String   @map("entity_id") @db.Uuid
+  entityType String   @map("entity_type") // 'note' or 'document'
+  userId     String   @map("user_id") @db.Uuid
+  content    String
+  title      String?
+  tags       Json     @default("[]")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Full-text search vector (generated column in database)
+  searchVector Unsupported("tsvector")?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([entityId, entityType], name: "search_index_entity_unique")
+  @@index([userId, entityType], name: "idx_search_user_type")
+  @@index([entityId, entityType], name: "idx_search_entity")
+  @@map("search_index")
+}
+
+model ActivityLog {
+  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  action     String
+  entityType String   @map("entity_type") // 'note', 'cluster', 'document', 'user'
+  entityId   String?  @map("entity_id") @db.Uuid
+  metadata   Json     @default("{}")
+  ipAddress  String?  @map("ip_address") @db.Inet
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)], name: "idx_activity_user_created")
+  @@index([entityType, entityId], name: "idx_activity_entity")
+  @@map("activity_logs")
+}
+
+// ============================================================================
+// BACKGROUND JOBS AND CACHING
+// ============================================================================
+
+model JobQueue {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  type         JobType
+  status       JobStatus @default(pending)
+  payload      Json      @default("{}")
+  result       Json?
+  error        String?
+  attempts     Int       @default(0)
+  maxAttempts  Int       @default(3) @map("max_attempts")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  scheduledFor DateTime? @map("scheduled_for") @db.Timestamptz
+
+  @@index([status, scheduledFor], name: "idx_jobs_status_scheduled")
+  @@index([type, status], name: "idx_jobs_type_status")
+  @@index([createdAt], name: "idx_jobs_created")
+  @@map("job_queue")
+}
+
+model RateLimit {
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  key         String   @unique // format: "user:action" or "ip:action"
+  count       Int      @default(1)
+  windowStart DateTime @default(now()) @map("window_start") @db.Timestamptz
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz
+
+  @@index([key], name: "idx_rate_limits_key")
+  @@index([expiresAt], name: "idx_rate_limits_expires")
+  @@map("rate_limits")
+}
+
+model EmbeddingCache {
+  id        String                      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  textHash  String                      @unique @map("text_hash") // SHA-256 hash of the text
+  embedding Unsupported("vector(1536)")
+  model     String                      @default("text-embedding-3-small")
+  createdAt DateTime                    @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt DateTime?                   @map("expires_at") @db.Timestamptz
+
+  @@index([textHash], name: "idx_embedding_cache_hash")
+  @@index([expiresAt], name: "idx_embedding_cache_expires")
+  @@map("embedding_cache")
+}

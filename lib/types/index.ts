@@ -263,6 +263,10 @@ export interface AuthResponse {
   refreshToken?: string
 }
 
+// Re-export database and API types
+export * from './database'
+export * from './supabase'
+
 // Export all types for easy importing
 export type {
   // Re-export commonly used types

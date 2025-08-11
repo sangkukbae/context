@@ -1,5 +1,6 @@
 // Database Schema Types
-// These types represent the actual database structure for Prisma/Drizzle ORM
+// These types represent the actual database structure for Supabase + Prisma ORM
+// Compatible with both Supabase client and Prisma generated types
 
 export interface UserSchema {
   id: string
