@@ -72,3 +72,6 @@ temp/
 
 # Optional - exclude .env.example if you want to include it in repo
 # .env.example
+
+# Sentry Config File
+.env.sentry-build-plugin

@@ -68,6 +68,10 @@ const envSchema = z.object({
 
   // Monitoring
   SENTRY_DSN: z.string().url().optional(),
+  SENTRY_AUTH_TOKEN: z.string().optional(),
+  SENTRY_ORG: z.string().optional(),
+  SENTRY_PROJECT: z.string().optional(),
+  NEXT_PUBLIC_SENTRY_ENVIRONMENT: z.string().default('development'),
   VERCEL_ANALYTICS_ID: z.string().optional(),
   POSTHOG_API_KEY: z.string().optional(),
   POSTHOG_HOST: z.string().url().default('https://app.posthog.com'),
