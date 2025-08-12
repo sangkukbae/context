@@ -3,7 +3,13 @@
 
 import { createSupabaseServerClient, createSupabaseServiceClient } from './server'
 import { supabase } from './client'
-import type { Database, TablesInsert, TablesUpdate, VectorSearchResult } from '../types/supabase'
+import type {
+  Database,
+  TablesInsert,
+  TablesUpdate,
+  VectorSearchResult,
+  Json,
+} from '../types/supabase'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Type alias for convenience
@@ -444,7 +450,7 @@ export async function updateJobStatus(
     updated_at: new Date().toISOString(),
   }
 
-  if (result) updates.result = result
+  if (result) updates.result = result as Json
   if (error) updates.error = error
   if (status === 'processing') updates.attempts = 1
 
