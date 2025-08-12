@@ -1,7 +1,32 @@
 import type { NextConfig } from 'next'
 import { withSentryConfig } from '@sentry/nextjs'
 
-const nextConfig: NextConfig = {}
+const nextConfig: NextConfig = {
+  // Exclude scripts directory from TypeScript compilation
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  webpack: config => {
+    // Exclude scripts directory from build
+    config.externals = config.externals || []
+    config.externals.push({
+      pg: 'commonjs pg',
+    })
+    return config
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
+      },
+    ],
+  },
+}
 
 // Make sure adding Sentry options is the last code to run before exporting
 export default withSentryConfig(
