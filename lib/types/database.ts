@@ -32,16 +32,30 @@ export interface NoteSchema {
   clusterId: string | null
   createdAt: Date
   updatedAt: Date
+  deletedAt: Date | null // Added soft delete support
 
-  // Metadata stored as JSON
+  // Metadata stored as JSON - matches NoteMetadata interface
   metadata: {
     wordCount: number
     characterCount: number
     tags: string[]
     source?: string
+    version?: number
+    editHistory?: Array<{
+      timestamp: Date
+      contentLength: number
+      tagsChanged: boolean
+      significantEdit: boolean
+      summary?: string
+    }>
+    importance?: 'low' | 'medium' | 'high'
+    sentiment?: 'positive' | 'neutral' | 'negative'
+    categories?: string[]
+    linkedNoteIds?: string[]
+    custom?: Record<string, unknown>
   }
 
-  // Vector embedding for semantic search
+  // Vector embedding for semantic search (pgvector)
   embedding: number[] | null
   embeddingUpdatedAt: Date | null
 }
@@ -286,7 +300,7 @@ export interface DatabaseIndex {
   where?: string
 }
 
-// Common database indexes we need
+// Common database indexes we need - Enhanced for note operations
 export const REQUIRED_INDEXES: DatabaseIndex[] = [
   {
     tableName: 'notes',
@@ -295,8 +309,29 @@ export const REQUIRED_INDEXES: DatabaseIndex[] = [
   },
   {
     tableName: 'notes',
+    indexName: 'idx_notes_user_updated',
+    columns: ['userId', 'updatedAt'],
+  },
+  {
+    tableName: 'notes',
     indexName: 'idx_notes_cluster',
     columns: ['clusterId'],
+  },
+  {
+    tableName: 'notes',
+    indexName: 'idx_notes_user_deleted',
+    columns: ['userId', 'deletedAt'],
+  },
+  {
+    tableName: 'notes',
+    indexName: 'idx_notes_embedding',
+    columns: ['embedding'],
+    where: 'embedding IS NOT NULL',
+  },
+  {
+    tableName: 'notes',
+    indexName: 'idx_notes_content_search',
+    columns: ['content'],
   },
   {
     tableName: 'clusters',

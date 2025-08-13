@@ -1,7 +1,15 @@
 import type { Context } from 'hono'
 import type {
   ApiResponse,
-  Note,
+  NoteDTO,
+  CreateNoteRequest,
+  UpdateNoteRequest,
+  NoteQuery,
+  NoteSearchQuery,
+  BulkNoteOperation,
+  BulkNoteOperationResult,
+  NoteResponse,
+  NoteListResponse,
   User,
   Cluster,
   Document,
@@ -23,28 +31,41 @@ export interface AppContext extends Context {
 // API Route Handler Types
 export type ApiHandler = (c: AppContext) => Promise<Response> | Response
 
-// Notes API Types
+// Notes API Types - Enhanced with comprehensive type safety
 export interface NotesAPI {
   'GET /notes': {
-    query: PaginationRequest
-    response: ApiResponse<PaginatedResponse<Note>>
+    query: NoteQuery
+    response: NoteListResponse
   }
   'POST /notes': {
-    body: { content: string; metadata?: Record<string, unknown> }
-    response: ApiResponse<Note>
+    body: CreateNoteRequest
+    response: NoteResponse
   }
   'GET /notes/:id': {
     params: { id: string }
-    response: ApiResponse<Note>
+    response: NoteResponse
   }
   'PUT /notes/:id': {
     params: { id: string }
-    body: { content?: string; metadata?: Record<string, unknown> }
-    response: ApiResponse<Note>
+    body: UpdateNoteRequest
+    response: NoteResponse
   }
   'DELETE /notes/:id': {
     params: { id: string }
+    query?: { permanent?: boolean }
     response: ApiResponse<void>
+  }
+  'POST /notes/:id/recover': {
+    params: { id: string }
+    response: NoteResponse
+  }
+  'POST /notes/bulk': {
+    body: BulkNoteOperation
+    response: ApiResponse<BulkNoteOperationResult>
+  }
+  'POST /notes/search': {
+    body: NoteSearchQuery
+    response: ApiResponse<{ results: NoteDTO[]; total: number; took: number }>
   }
 }
 
