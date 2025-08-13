@@ -68,16 +68,30 @@ export async function getNotesByUserId(
     offset?: number
     orderBy?: 'created_at' | 'updated_at'
     order?: 'asc' | 'desc'
+    includeDeleted?: boolean
   }
 ) {
-  const { limit = 50, offset = 0, orderBy = 'created_at', order = 'desc' } = options || {}
+  const {
+    limit = 50,
+    offset = 0,
+    orderBy = 'created_at',
+    order = 'desc',
+    includeDeleted = false,
+  } = options || {}
 
-  const { data, error } = await client
+  let query = client
     .from('notes')
     .select('*')
     .eq('user_id', userId)
     .order(orderBy, { ascending: order === 'asc' })
     .range(offset, offset + limit - 1)
+
+  // Exclude soft-deleted notes by default
+  if (!includeDeleted) {
+    query = query.is('deleted_at', null)
+  }
+
+  const { data, error } = await query
 
   if (error) throw error
   return data
@@ -101,6 +115,69 @@ export async function updateNote(
 
 export async function deleteNote(client: SupabaseDatabase, noteId: string) {
   const { data, error } = await client.from('notes').delete().eq('id', noteId).select().single()
+
+  if (error) throw error
+  return data
+}
+
+// Soft delete a note (sets deleted_at timestamp)
+export async function softDeleteNote(client: SupabaseDatabase, noteId: string, userId: string) {
+  const { data, error } = await client.rpc('soft_delete_note', {
+    note_id: noteId,
+    user_id_param: userId,
+  })
+
+  if (error) throw error
+  return data?.[0] || null
+}
+
+// Recover a soft-deleted note
+export async function recoverNote(client: SupabaseDatabase, noteId: string, userId: string) {
+  const { data, error } = await client.rpc('recover_note', {
+    note_id: noteId,
+    user_id_param: userId,
+  })
+
+  if (error) throw error
+  return data?.[0] || null
+}
+
+// Get soft-deleted notes that can be recovered
+export async function getRecoverableNotes(
+  client: SupabaseDatabase,
+  userId: string,
+  options?: {
+    limit?: number
+    offset?: number
+  }
+) {
+  const { limit = 50, offset = 0 } = options || {}
+
+  const { data, error } = await client
+    .from('recoverable_notes')
+    .select('*')
+    .eq('user_id', userId)
+    .order('deleted_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  if (error) throw error
+  return data
+}
+
+// Get note by ID (including soft-deleted if user owns it and it's recoverable)
+export async function getNoteById(
+  client: SupabaseDatabase,
+  noteId: string,
+  userId: string,
+  includeDeleted: boolean = false
+) {
+  let query = client.from('notes').select('*').eq('id', noteId).eq('user_id', userId)
+
+  if (!includeDeleted) {
+    query = query.is('deleted_at', null)
+  }
+
+  const { data, error } = await query.single()
 
   if (error) throw error
   return data
