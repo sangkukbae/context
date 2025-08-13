@@ -1,5 +1,6 @@
 import { supabase } from '../supabase/client'
 import { type AuthProvider, type AuthResult, type User } from './types'
+import { getOAuthProviderConfig, logOAuthEvent } from './oauth-utils'
 
 /**
  * Client-side auth utilities for React components
@@ -119,6 +120,8 @@ export async function signInWithOAuth(
   redirectTo?: string
 ): Promise<AuthResult> {
   try {
+    logOAuthEvent('sign_in_attempt', { provider, redirectTo })
+
     // Build the callback URL with the final redirect destination
     const callbackUrl = new URL('/auth/callback', window.location.origin)
 
@@ -128,18 +131,35 @@ export async function signInWithOAuth(
       callbackUrl.searchParams.set('state', state)
     }
 
+    // Get provider-specific configuration
+    const providerConfig = getOAuthProviderConfig(provider)
+    const oauthOptions = {
+      redirectTo: callbackUrl.toString(),
+      ...providerConfig,
+    }
+
+    logOAuthEvent('oauth_config', {
+      provider,
+      options: oauthOptions,
+      callbackUrl: callbackUrl.toString(),
+    })
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: {
-        redirectTo: callbackUrl.toString(),
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-      },
+      options: oauthOptions,
     })
 
     if (error) {
+      logOAuthEvent(
+        'sign_in_error',
+        {
+          provider,
+          error: error.message,
+          code: error.name,
+        },
+        'error'
+      )
+
       return {
         success: false,
         error: {
@@ -149,9 +169,20 @@ export async function signInWithOAuth(
       }
     }
 
+    logOAuthEvent('sign_in_redirect', { provider })
+
     // OAuth sign in redirects, so we don't return user data here
     return { success: true, data: undefined }
   } catch (error) {
+    logOAuthEvent(
+      'sign_in_unexpected_error',
+      {
+        provider,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      'error'
+    )
+
     return {
       success: false,
       error: {
