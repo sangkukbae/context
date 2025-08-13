@@ -42,33 +42,39 @@ export interface UserSubscription {
   currentPeriodEnd: Date
 }
 
-// Note Types
-export interface Note {
-  id: string
-  content: string
-  userId: string
-  createdAt: Date
-  updatedAt: Date
-  metadata: NoteMetadata
-  clusterId?: string
-}
+// Re-export note types from dedicated module
+export type {
+  Note,
+  NoteDTO,
+  NoteMetadata,
+  NoteEditEntry,
+  NotePreview,
+  NoteSummary,
+  DeletedNote,
+  CreateNoteRequest,
+  UpdateNoteRequest,
+  NoteResponse,
+  NoteListResponse,
+  NoteFilter,
+  NoteSortOptions,
+  NoteQuery,
+  NoteSearchQuery,
+  BulkNoteOperation,
+  BulkNoteOperationResult,
+  NoteStats,
+  NoteAnalytics,
+  NoteActivity,
+  NoteComponentProps,
+  NoteFormState,
+  NoteLoadingState,
+  NoteOptimisticUpdate,
+  SearchableNoteFields,
+  SortableNoteFields,
+  CalculatedMetadataFields,
+  UserDefinedMetadataFields,
+} from './note'
 
-export interface NoteMetadata {
-  wordCount: number
-  characterCount: number
-  tags: string[]
-  source?: string
-}
-
-export interface CreateNoteRequest {
-  content: string
-  metadata?: Partial<NoteMetadata>
-}
-
-export interface UpdateNoteRequest {
-  content?: string
-  metadata?: Partial<NoteMetadata>
-}
+export { isDeletedNote, hasEmbedding, isClustered, toNotePreview, toNoteDTO } from './note'
 
 // Cluster Types
 export interface Cluster {
@@ -76,7 +82,7 @@ export interface Cluster {
   title: string
   description?: string
   userId: string
-  notes: Note[]
+  notes: import('./note').Note[]
   createdAt: Date
   updatedAt: Date
   metadata: ClusterMetadata
@@ -97,7 +103,7 @@ export interface ClusterSuggestion {
   clusterId: string
   title: string
   description: string
-  notes: Note[]
+  notes: import('./note').Note[]
   confidence: number
   themes: string[]
   createdAt: Date
@@ -204,7 +210,7 @@ export interface WebSocketMessage<T = unknown> {
 export interface NoteUpdateMessage {
   type: 'note:update' | 'note:create' | 'note:delete'
   noteId: string
-  note?: Note
+  note?: import('./note').Note
 }
 
 export interface ClusterUpdateMessage {
@@ -271,7 +277,6 @@ export * from './supabase'
 export type {
   // Re-export commonly used types
   ApiResponse as API,
-  Note as NoteType,
   User as UserType,
   Cluster as ClusterType,
   Document as DocumentType,
