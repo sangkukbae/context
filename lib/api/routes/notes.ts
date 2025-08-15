@@ -7,6 +7,8 @@ import type { Context } from 'hono'
 import type { ApiResponse, PaginatedResponse } from '@/lib/types'
 import type { Database } from '@/lib/types/supabase'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js'
+import { env } from '@/lib/env'
 import {
   CreateNoteSchema,
   UpdateNoteSchema,
@@ -30,11 +32,30 @@ import {
   getNoteById,
   getRecoverableNotes,
   logActivity,
-  getSupabaseClient,
 } from '@/lib/supabase/database'
 
 // Type for Hono context with Supabase client
 type HonoContext = Context
+
+// ============================================================================
+// HELPER FUNCTIONS FOR AUTHENTICATION
+// ============================================================================
+
+async function createAuthenticatedClient(accessToken: string): Promise<SupabaseClient<Database>> {
+  const supabase = createClient<Database>(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      global: {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    }
+  )
+
+  return supabase
+}
 
 // ============================================================================
 // AUTHENTICATION MIDDLEWARE
@@ -42,7 +63,6 @@ type HonoContext = Context
 
 async function authMiddleware(c: Context, next: () => Promise<void>) {
   try {
-    const supabase = await getSupabaseClient('server')
     const authHeader = c.req.header('authorization')
 
     if (!authHeader?.startsWith('Bearer ')) {
@@ -58,10 +78,15 @@ async function authMiddleware(c: Context, next: () => Promise<void>) {
     }
 
     const token = authHeader.substring(7)
+
+    // Create an authenticated client with the user's token for RLS to work properly
+    const userSupabase = await createAuthenticatedClient(token)
+
+    // Verify the token and get user info
     const {
       data: { user },
       error,
-    } = await supabase.auth.getUser(token)
+    } = await userSupabase.auth.getUser()
 
     if (error || !user) {
       return c.json(
@@ -75,8 +100,8 @@ async function authMiddleware(c: Context, next: () => Promise<void>) {
       )
     }
 
-    // Store user info in context
-    c.set('supabase', supabase)
+    // Store user info and authenticated client in context
+    c.set('supabase', userSupabase)
     c.set('userId', user.id)
     c.set('user', { id: user.id, email: user.email || '' })
 
@@ -120,7 +145,7 @@ async function trackNoteActivity(
       action: `note:${action}`,
       entity_type: 'note',
       entity_id: noteId,
-      metadata: metadata as Record<string, any>,
+      metadata: metadata as Record<string, unknown>,
       ip_address: clientInfo.ip,
       user_agent: clientInfo.userAgent,
     })
@@ -209,7 +234,7 @@ app.post(
       const newNote = await createNote(supabase, {
         content: sanitizedContent,
         user_id: userId,
-        metadata: finalMetadata as any, // Type cast to avoid Json compatibility issues
+        metadata: finalMetadata as Record<string, unknown>, // Type cast to avoid Json compatibility issues
       })
 
       // Track activity
@@ -272,7 +297,7 @@ app.get(
   }),
   async (c: HonoContext) => {
     try {
-      const query = c.req.query() as any as NoteQuery
+      const query = c.req.query() as unknown as NoteQuery
       const userId = c.get('userId') as string
       const supabase = c.get('supabase') as SupabaseClient<Database>
 
@@ -351,7 +376,7 @@ app.get(
       return c.json(
         {
           success: true,
-          data: response,
+          data: response, // Return the full response with nested data and pagination
           timestamp: new Date().toISOString(),
         } as ApiResponse,
         200
