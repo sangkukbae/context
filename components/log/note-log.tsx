@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
+import { apiClient, ApiError } from '@/lib/api/client'
+import { useAuth } from '@/lib/auth/hooks'
 
 interface NoteLogProps {
   className?: string
@@ -24,11 +26,6 @@ interface PaginationMeta {
   hasPrev: boolean
 }
 
-interface NotesResponse {
-  data: Note[]
-  pagination: PaginationMeta
-}
-
 export function NoteLog({ className }: NoteLogProps) {
   const [notes, setNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,43 +35,50 @@ export function NoteLog({ className }: NoteLogProps) {
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [editContent, setEditContent] = useState('')
 
-  // Fetch notes from API
-  const fetchNotes = useCallback(async (page = 1, append = false) => {
-    try {
-      const response = await fetch(`/api/notes?page=${page}&limit=20`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+  // Authentication state
+  const auth = useAuth()
+  const isAuthenticated = auth.status === 'authenticated'
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch notes')
+  // Fetch notes from API
+  const fetchNotes = useCallback(
+    async (page = 1, append = false) => {
+      if (!isAuthenticated) {
+        setLoading(false)
+        return
       }
 
-      const result = await response.json()
-
-      if (result.success) {
-        const notesData = result.data as NotesResponse
+      try {
+        const response = await apiClient.get<{ data: Note[]; pagination: PaginationMeta }>(
+          `/api/notes?page=${page}&limit=20`
+        )
 
         if (append) {
-          setNotes(prev => [...prev, ...notesData.data])
+          setNotes(prev => [...prev, ...response.data])
         } else {
-          setNotes(notesData.data)
+          setNotes(response.data)
         }
 
-        setHasMore(notesData.pagination.hasNext)
+        setHasMore(response.pagination.hasNext)
         setCurrentPage(page)
-      } else {
-        throw new Error(result.message || 'Failed to fetch notes')
+      } catch (error) {
+        console.error('Error fetching notes:', error)
+
+        if (error instanceof ApiError) {
+          if (error.status === 401) {
+            toast.error('Your session has expired. Please sign in again.')
+            // The apiClient should handle redirecting to sign-in
+            return
+          }
+          toast.error(error.message || 'Failed to load notes. Please try again.')
+        } else {
+          toast.error('Failed to load notes. Please try again.')
+        }
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('Error fetching notes:', error)
-      toast.error('Failed to load notes. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+    },
+    [isAuthenticated]
+  )
 
   // Load initial notes
   useEffect(() => {
@@ -82,42 +86,41 @@ export function NoteLog({ className }: NoteLogProps) {
   }, [fetchNotes])
 
   // Create new note
-  const handleCreateNote = useCallback(async (content: string) => {
-    setSubmitting(true)
-
-    try {
-      const response = await fetch('/api/notes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to create note')
+  const handleCreateNote = useCallback(
+    async (content: string) => {
+      if (!isAuthenticated) {
+        toast.error('You must be signed in to create notes.')
+        return
       }
 
-      const result = await response.json()
+      setSubmitting(true)
 
-      if (result.success) {
-        const newNote = result.data as Note
+      try {
+        const newNote = await apiClient.post<Note>('/api/notes', { content })
 
         // Add to the beginning of the notes array (optimistic update)
         setNotes(prev => [newNote, ...prev])
 
         toast.success('Your note has been saved successfully.')
-      } else {
-        throw new Error(result.message || 'Failed to create note')
+      } catch (error) {
+        console.error('Error creating note:', error)
+
+        if (error instanceof ApiError) {
+          if (error.status === 401) {
+            toast.error('Your session has expired. Please sign in again.')
+            return
+          }
+          toast.error(error.message || 'Failed to create note. Please try again.')
+        } else {
+          toast.error('Failed to create note. Please try again.')
+        }
+        throw error // Re-throw to prevent clearing the input
+      } finally {
+        setSubmitting(false)
       }
-    } catch (error) {
-      console.error('Error creating note:', error)
-      toast.error('Failed to create note. Please try again.')
-      throw error // Re-throw to prevent clearing the input
-    } finally {
-      setSubmitting(false)
-    }
-  }, [])
+    },
+    [isAuthenticated]
+  )
 
   // Load more notes (pagination)
   const handleLoadMore = useCallback(async () => {
@@ -134,75 +137,98 @@ export function NoteLog({ className }: NoteLogProps) {
 
   // Save edited note
   const handleSaveEdit = useCallback(async () => {
-    if (!editingNote || !editContent.trim()) return
+    if (!editingNote || !editContent.trim() || !isAuthenticated) return
 
     try {
-      const response = await fetch(`/api/notes/${editingNote.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content: editContent.trim() }),
+      const updatedNote = await apiClient.put<Note>(`/api/notes/${editingNote.id}`, {
+        content: editContent.trim(),
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to update note')
-      }
+      // Update the note in the local state
+      setNotes(prev => prev.map(note => (note.id === updatedNote.id ? updatedNote : note)))
 
-      const result = await response.json()
+      setEditingNote(null)
+      setEditContent('')
 
-      if (result.success) {
-        const updatedNote = result.data as Note
-
-        // Update the note in the local state
-        setNotes(prev => prev.map(note => (note.id === updatedNote.id ? updatedNote : note)))
-
-        setEditingNote(null)
-        setEditContent('')
-
-        toast.success('Your changes have been saved.')
-      } else {
-        throw new Error(result.message || 'Failed to update note')
-      }
+      toast.success('Your changes have been saved.')
     } catch (error) {
       console.error('Error updating note:', error)
-      toast.error('Failed to update note. Please try again.')
+
+      if (error instanceof ApiError) {
+        if (error.status === 401) {
+          toast.error('Your session has expired. Please sign in again.')
+          return
+        }
+        toast.error(error.message || 'Failed to update note. Please try again.')
+      } else {
+        toast.error('Failed to update note. Please try again.')
+      }
     }
-  }, [editingNote, editContent])
+  }, [editingNote, editContent, isAuthenticated])
 
   // Delete note
-  const handleDeleteNote = useCallback(async (noteId: string) => {
-    try {
-      const response = await fetch(`/api/notes/${noteId}`, {
-        method: 'DELETE',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete note')
+  const handleDeleteNote = useCallback(
+    async (noteId: string) => {
+      if (!isAuthenticated) {
+        toast.error('You must be signed in to delete notes.')
+        return
       }
 
-      const result = await response.json()
+      try {
+        await apiClient.delete(`/api/notes/${noteId}`)
 
-      if (result.success) {
         // Remove note from local state (optimistic update)
         setNotes(prev => prev.filter(note => note.id !== noteId))
 
         toast.success('Your note has been moved to trash and can be recovered for 30 days.')
-      } else {
-        throw new Error(result.message || 'Failed to delete note')
+      } catch (error) {
+        console.error('Error deleting note:', error)
+
+        if (error instanceof ApiError) {
+          if (error.status === 401) {
+            toast.error('Your session has expired. Please sign in again.')
+            return
+          }
+          toast.error(error.message || 'Failed to delete note. Please try again.')
+        } else {
+          toast.error('Failed to delete note. Please try again.')
+        }
       }
-    } catch (error) {
-      console.error('Error deleting note:', error)
-      toast.error('Failed to delete note. Please try again.')
-    }
-  }, [])
+    },
+    [isAuthenticated]
+  )
+
+  // Show loading while authentication is checking
+  if (auth.status === 'loading') {
+    return (
+      <div className={cn('space-y-6', className)}>
+        <div className="flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show message if not authenticated
+  if (auth.status === 'unauthenticated') {
+    return (
+      <div className={cn('space-y-6', className)}>
+        <div className="text-center p-8">
+          <p className="text-gray-600 mb-4">You must be signed in to view and create notes.</p>
+          <Button asChild>
+            <a href="/auth/sign-in">Sign In</a>
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={cn('space-y-6', className)}>
       {/* Note Input */}
       <NoteInput
         onSubmit={data => handleCreateNote(data.content)}
-        disabled={submitting}
+        disabled={submitting || !isAuthenticated}
         placeholder="What's on your mind? Start typing to capture your thoughts..."
       />
 
