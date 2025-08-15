@@ -7,6 +7,7 @@ This document outlines the fixes implemented to resolve the "Database error savi
 The error occurred at: `/?error=server_error&error_code=unexpected_failure&error_description=Database+error+saving+new+user`
 
 **Root Causes:**
+
 1. Missing proper OAuth callback handler using `exchangeCodeForSession`
 2. Missing database triggers for user profile creation
 3. Incomplete RLS policies for new user insertion
@@ -15,6 +16,7 @@ The error occurred at: `/?error=server_error&error_code=unexpected_failure&error
 ## Fixes Implemented
 
 ### 1. Created Proper OAuth Callback Route
+
 **File:** `/app/auth/callback/route.ts`
 
 - Replaced client-side callback page with server-side route handler
@@ -23,15 +25,18 @@ The error occurred at: `/?error=server_error&error_code=unexpected_failure&error
 - Supports state parameter for custom redirect URLs
 
 ### 2. Database Migration for User Profile Creation
+
 **File:** `/database/migrations/002_auth_triggers.sql`
 
 **Key Components:**
+
 - `handle_new_user()` function triggered when new users sign up
 - Trigger on `auth.users` table for automatic profile creation
 - Updated RLS policies allowing users to create their own profiles
 - `sync_user_profile()` helper function for profile updates
 
 **Trigger Logic:**
+
 ```sql
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
@@ -39,6 +44,7 @@ CREATE TRIGGER on_auth_user_created
 ```
 
 ### 3. Updated OAuth Client Configuration
+
 **File:** `/lib/auth/client.ts`
 
 - Fixed OAuth redirect URL to use proper callback route
@@ -46,13 +52,16 @@ CREATE TRIGGER on_auth_user_created
 - Improved error handling with proper error propagation
 
 ### 4. Migration Scripts
+
 **Files:**
+
 - `/scripts/run-migration.js` - Simple Node.js script using pg client
 - `/scripts/apply-auth-migration.ts` - TypeScript version using Supabase client
 
 ## Testing the Fix
 
 ### 1. Apply the Database Migration
+
 ```bash
 # Using Node.js script (requires pg package)
 npm install pg
@@ -65,6 +74,7 @@ npx tsx scripts/apply-auth-migration.ts
 ### 2. Verify Supabase Configuration
 
 Ensure these environment variables are set:
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
@@ -76,6 +86,7 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 ### 3. Configure OAuth Callback URL in Supabase
 
 In your Supabase dashboard:
+
 1. Go to Authentication → URL Configuration
 2. Add to **Redirect URLs**:
    - `http://localhost:3000/auth/callback` (development)
@@ -92,6 +103,7 @@ In your Supabase dashboard:
 ## What the Fix Does
 
 ### OAuth Flow (Before Fix)
+
 1. User clicks "Continue with Google"
 2. Redirects to Google OAuth
 3. Google redirects to `/auth/callback` (client-side page)
@@ -99,6 +111,7 @@ In your Supabase dashboard:
 5. **Error**: Database error saving new user
 
 ### OAuth Flow (After Fix)
+
 1. User clicks "Continue with Google"
 2. Redirects to Google OAuth
 3. Google redirects to `/auth/callback` (server-side route)
@@ -112,16 +125,19 @@ In your Supabase dashboard:
 The fix includes comprehensive error handling:
 
 ### Client-Side Errors
+
 - OAuth provider errors
 - Network failures
 - Invalid state parameters
 
 ### Server-Side Errors
+
 - Code exchange failures
 - Database connection issues
 - Missing environment variables
 
 ### Database Errors
+
 - Profile creation failures
 - RLS policy violations
 - Trigger execution errors
