@@ -116,7 +116,7 @@ async function checkOpenAI(): Promise<
   }
 
   // Skip health check if using placeholder API key
-  if (env.OPENAI_API_KEY === 'sk-placeholder' || env.OPENAI_API_KEY.startsWith('sk-placeholder')) {
+  if (env.OPENAI_API_KEY === 'sk-placeholder' || env.OPENAI_API_KEY?.startsWith('sk-placeholder')) {
     return {
       status: 'degraded',
       error: 'OpenAI API key not configured (using placeholder)',
