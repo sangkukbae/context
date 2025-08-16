@@ -61,10 +61,10 @@ async function checkDatabase(): Promise<{
       const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY)
 
       const start = Date.now()
-      const { error } = await supabase.from('_health').select('1').limit(1)
+      const { error } = await supabase.from('users').select('id').limit(1)
       const responseTime = Date.now() - start
 
-      if (error && !error.message.includes('does not exist')) {
+      if (error) {
         return { status: 'down' as const, responseTime, error: error.message }
       }
 
@@ -113,6 +113,14 @@ async function checkOpenAI(): Promise<
 > {
   if (!services.hasOpenAI) {
     return undefined
+  }
+
+  // Skip health check if using placeholder API key
+  if (env.OPENAI_API_KEY === 'sk-placeholder' || env.OPENAI_API_KEY.startsWith('sk-placeholder')) {
+    return {
+      status: 'degraded',
+      error: 'OpenAI API key not configured (using placeholder)',
+    }
   }
 
   try {

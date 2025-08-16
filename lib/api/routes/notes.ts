@@ -5,7 +5,7 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import type { Context } from 'hono'
 import type { ApiResponse, PaginatedResponse } from '@/lib/types'
-import type { Database } from '@/lib/types/supabase'
+import type { Database, Json } from '@/lib/types/supabase'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@supabase/supabase-js'
 import { env } from '@/lib/env'
@@ -145,7 +145,7 @@ async function trackNoteActivity(
       action: `note:${action}`,
       entity_type: 'note',
       entity_id: noteId,
-      metadata: metadata as Record<string, unknown>,
+      metadata: metadata as Json,
       ip_address: clientInfo.ip,
       user_agent: clientInfo.userAgent,
     })
@@ -234,7 +234,7 @@ app.post(
       const newNote = await createNote(supabase, {
         content: sanitizedContent,
         user_id: userId,
-        metadata: finalMetadata as Record<string, unknown>, // Type cast to avoid Json compatibility issues
+        metadata: finalMetadata as Json,
       })
 
       // Track activity

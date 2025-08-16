@@ -37,7 +37,7 @@ function mergeHeaders(base: HeadersInit, extra?: HeadersInit): HeadersInit {
 
 async function handleResponse<T>(res: Response): Promise<T> {
   const contentType = res.headers.get('content-type') || ''
-  let payload: any = undefined
+  let payload: unknown = undefined
 
   if (contentType.includes('application/json')) {
     try {
@@ -57,7 +57,16 @@ async function handleResponse<T>(res: Response): Promise<T> {
   const isEnvelope = payload && typeof payload === 'object' && 'success' in payload
 
   if (!res.ok) {
-    const message = (isEnvelope ? payload.message : undefined) || res.statusText || 'Request failed'
+    const message =
+      (isEnvelope &&
+      typeof payload === 'object' &&
+      payload !== null &&
+      'message' in payload &&
+      typeof payload.message === 'string'
+        ? payload.message
+        : undefined) ||
+      res.statusText ||
+      'Request failed'
     const error = new ApiError(res.status, message, payload)
 
     // Handle authentication errors
@@ -79,8 +88,8 @@ async function handleResponse<T>(res: Response): Promise<T> {
     throw error
   }
 
-  if (isEnvelope) {
-    return (payload.data as T) ?? (payload as T)
+  if (isEnvelope && typeof payload === 'object' && payload !== null) {
+    return 'data' in payload ? (payload.data as T) : (payload as T)
   }
   return payload as T
 }
