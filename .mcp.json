@@ -1,0 +1,35 @@
+{
+  "mcpServers": {
+    "docker-toolkit": {
+      "type": "stdio",
+      "command": "docker",
+      "args": ["mcp", "gateway", "run"],
+      "env": {}
+    },
+    "SQLite": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-v",
+        "mcp-test:/mcp",
+        "mcp/sqlite",
+        "--db-path",
+        "/mcp/db.sqlite"
+      ]
+    },
+    "fetch": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "mcp/fetch"]
+    },
+    "memory": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "-v", "claude-memory:/app/dist", "mcp/memory"]
+    },
+    "sequentialthinking": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "mcp/sequentialthinking"]
+    }
+  }
+}
