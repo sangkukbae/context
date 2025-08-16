@@ -115,7 +115,7 @@ function NoteItem({
                 <span className="sr-only">Open menu</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="bg-background">
               <DropdownMenuItem onClick={() => onEdit?.(note)} className="cursor-pointer">
                 <Edit className="w-4 h-4 mr-2" />
                 Edit
@@ -166,7 +166,7 @@ function NoteItem({
             {shouldShowExpand && (
               <button
                 onClick={() => setIsExpanded(true)}
-                className="ml-2 text-blue-600 hover:text-blue-800 text-sm font-medium inline-flex items-center gap-1"
+                className="ml-2 text-accent hover:text-accent/80 text-sm font-medium inline-flex items-center gap-1 transition-colors"
               >
                 Show more
                 <ExternalLink className="w-3 h-3" />
@@ -175,7 +175,7 @@ function NoteItem({
             {shouldShowCollapse && (
               <button
                 onClick={() => setIsExpanded(false)}
-                className="ml-2 text-blue-600 hover:text-blue-800 text-sm font-medium block mt-2"
+                className="ml-2 text-accent hover:text-accent/80 text-sm font-medium block mt-2 transition-colors"
               >
                 Show less
               </button>
@@ -211,7 +211,7 @@ function NoteItem({
                   <Badge
                     key={category}
                     variant="outline"
-                    className="text-xs bg-blue-50 text-blue-700"
+                    className="text-xs bg-accent/10 text-accent"
                   >
                     {category}
                   </Badge>
@@ -225,7 +225,10 @@ function NoteItem({
             )}
 
             {clusterId && (
-              <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
+              <Badge
+                variant="outline"
+                className="text-xs bg-secondary/50 text-secondary-foreground"
+              >
                 <Brain className="w-3 h-3 mr-1" />
                 Clustered
               </Badge>
@@ -236,9 +239,10 @@ function NoteItem({
                 variant="outline"
                 className={cn(
                   'text-xs',
-                  metadata.sentiment === 'positive' && 'bg-green-50 text-green-700',
-                  metadata.sentiment === 'negative' && 'bg-red-50 text-red-700',
-                  metadata.sentiment === 'neutral' && 'bg-gray-50 text-gray-700'
+                  metadata.sentiment === 'positive' &&
+                    'bg-green-500/10 text-green-700 dark:text-green-400',
+                  metadata.sentiment === 'negative' && 'bg-destructive/10 text-destructive',
+                  metadata.sentiment === 'neutral' && 'bg-muted text-muted-foreground'
                 )}
               >
                 {metadata.sentiment}
