@@ -1,8 +1,22 @@
 # Type Definitions Reference
 
-This document provides comprehensive reference for TypeScript type definitions used throughout the Context application.
+This document provides comprehensive reference for TypeScript type definitions used throughout the Context application, including core types, validation schemas, and type safety patterns.
+
+## Table of Contents
+
+- [Core Type System](#core-type-system)
+- [API Types](#api-types)
+- [Database Types](#database-types)
+- [Note Types](#note-types)
+- [Validation Schemas](#validation-schemas)
+- [Client Types](#client-types)
+- [Supabase Integration](#supabase-integration)
+- [Type Utilities](#type-utilities)
+- [Examples](#examples)
 
 ## Core Type System
+
+The Context application uses a comprehensive TypeScript type system with over 2000 lines of type definitions across multiple layers.
 
 ### API Response Types
 
@@ -15,17 +29,121 @@ export interface ApiResponse<T = unknown> {
   error?: string
   message?: string
   timestamp: string
+  validation?: ZodIssue[] // For validation errors
 }
 ```
 
-#### API Error Response
+#### Paginated Response
 
 ```typescript
-export interface ApiError {
-  error: string
-  message: string
-  timestamp: string
-  statusCode?: number
+export interface PaginatedResponse<T> {
+  data: T[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+    hasNext: boolean
+    hasPrev: boolean
+    nextCursor?: string
+    prevCursor?: string
+  }
+}
+```
+
+#### API Error Class
+
+```typescript
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public error: string,
+    message: string,
+    public response?: Response
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+```
+
+## API Types
+
+### Comprehensive API Interface Definitions
+
+#### Notes API Interface
+
+```typescript
+export interface NotesAPI {
+  'GET /': {
+    query: NoteQuery
+    response: PaginatedResponse<Note>
+  }
+  'POST /': {
+    body: CreateNoteRequest
+    response: Note
+  }
+  'GET /:id': {
+    params: { id: string }
+    response: Note
+  }
+  'PUT /:id': {
+    params: { id: string }
+    body: UpdateNoteRequest
+    response: Note
+  }
+  'DELETE /:id': {
+    params: { id: string }
+    response: { message: string }
+  }
+  'POST /:id/recover': {
+    params: { id: string }
+    response: Note
+  }
+  'GET /deleted': {
+    query: DeletedNotesQuery
+    response: PaginatedResponse<DeletedNote>
+  }
+}
+```
+
+#### Type-Safe Route Extraction
+
+```typescript
+// Utility types for extracting route information
+export type ExtractParams<T> = T extends { params: infer P } ? P : never
+export type ExtractQuery<T> = T extends { query: infer Q } ? Q : never
+export type ExtractBody<T> = T extends { body: infer B } ? B : never
+export type ExtractResponse<T> = T extends { response: infer R } ? R : never
+```
+
+### Error Type Hierarchy
+
+```typescript
+export abstract class AppError extends Error {
+  abstract readonly statusCode: number
+  abstract readonly code: string
+}
+
+export class ValidationError extends AppError {
+  readonly statusCode = 400
+  readonly code = 'VALIDATION_ERROR'
+  constructor(
+    message: string,
+    public details?: ZodIssue[]
+  ) {
+    super(message)
+  }
+}
+
+export class AuthenticationError extends AppError {
+  readonly statusCode = 401
+  readonly code = 'AUTHENTICATION_ERROR'
+}
+
+export class NotFoundError extends AppError {
+  readonly statusCode = 404
+  readonly code = 'NOT_FOUND'
 }
 ```
 
