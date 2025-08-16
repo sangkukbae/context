@@ -1,74 +1,344 @@
 # Database Reference
 
-This document provides comprehensive reference for the Context application's database schema and Supabase integration.
+This document provides comprehensive reference for the Context application's database schema and Supabase integration, including table structures, operations, and performance optimizations.
+
+## Table of Contents
+
+- [Database Overview](#database-overview)
+- [Supabase Integration](#supabase-integration)
+- [Database Schema](#database-schema)
+- [Database Operations](#database-operations)
+- [Migration System](#migration-system)
+- [Row Level Security](#row-level-security)
+- [Performance Optimization](#performance-optimization)
+- [Vector Search](#vector-search)
+- [Examples](#examples)
 
 ## Database Overview
 
-The Context application uses **PostgreSQL** via **Supabase** with the following key features:
+The Context application uses **PostgreSQL** via **Supabase** with advanced features for AI-powered note management:
 
-- **ORM**: Prisma for type-safe database operations
-- **Extensions**: pgvector for embeddings, uuid-ossp for UUID generation
-- **Features**: Full-text search, vector similarity search, JSONB storage
-- **Authentication**: Integrated with Supabase Auth
+### Key Features
+
+- **PostgreSQL Extensions**: pgvector, uuid-ossp, pgcrypto
+- **Vector Search**: AI embeddings with similarity search
+- **Real-time**: Supabase Realtime for live updates
+- **Type Safety**: Dual ORM approach (Supabase + Prisma)
+- **Soft Delete**: 30-day recovery system for notes
+- **Authentication**: Integrated Supabase Auth with RLS
+
+### Architecture
+
+- **Database**: PostgreSQL 15+ with vector extensions
+- **ORM**: Supabase client for real-time + Prisma for type safety
+- **Security**: Row Level Security (RLS) for multi-tenant isolation
+- **Performance**: Strategic indexing and materialized views
+
+## Supabase Integration
+
+### Client Configuration
+
+The application uses three types of Supabase clients:
+
+#### Browser Client (`lib/supabase/client.ts`)
+
+```typescript
+import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/types/supabase'
+
+export const supabase = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+```
+
+#### Server Client (`lib/supabase/server.ts`)
+
+```typescript
+// SSR-compatible with cookie handling
+export async function createServerClient() {
+  const cookieStore = cookies()
+  return createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get: name => cookieStore.get(name)?.value,
+        set: (name, value, options) => cookieStore.set({ name, value, ...options }),
+        remove: (name, options) => cookieStore.delete({ name, ...options }),
+      },
+    }
+  )
+}
+```
+
+#### Service Client
+
+```typescript
+// Admin operations with service role key
+export const supabaseAdmin = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+```
+
+### Real-time Subscriptions
+
+```typescript
+// Subscribe to note changes
+const subscription = supabase
+  .channel('notes_changes')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, payload =>
+    console.log('Change received!', payload)
+  )
+  .subscribe()
+```
 
 ## Database Schema
 
-### Core Models
+### Core Tables Overview
 
-#### User Model
+The database consists of the following main tables:
 
-Stores user account information and preferences.
+| Table           | Purpose                           | Key Features                                     |
+| --------------- | --------------------------------- | ------------------------------------------------ |
+| `users`         | User accounts and preferences     | OAuth integration, JSONB preferences             |
+| `notes`         | Individual notes with AI metadata | Vector embeddings, soft delete, full-text search |
+| `clusters`      | AI-generated note groupings       | Confidence scoring, automatic updates            |
+| `documents`     | Generated documents from clusters | Sharing capabilities, version control            |
+| `activity_logs` | User action tracking              | Analytics, audit trail                           |
+
+### Users Table
+
+Central user management with authentication and preferences.
 
 ```sql
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  email VARCHAR UNIQUE NOT NULL,
-  name VARCHAR,
-  avatar VARCHAR,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(255),
+  avatar_url TEXT,
   email_verified TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
-  -- Preferences as JSONB
-  preferences JSONB DEFAULT '{"theme": "system", "autoSave": true, "notifications": true, "clusterSuggestions": true}',
+  -- User preferences stored as JSONB
+  preferences JSONB DEFAULT '{
+    "theme": "system",
+    "autoSave": true,
+    "notifications": true,
+    "clusterSuggestions": true,
+    "aiFeatures": true
+  }',
 
-  -- Subscription information
+  -- Subscription management
   subscription_plan user_subscription_plan DEFAULT 'free',
   subscription_status user_subscription_status,
   subscription_current_period_end TIMESTAMPTZ
 );
 ```
 
-**Prisma Model:**
+### Notes Table
+
+Core table for note storage with AI features and soft delete.
+
+```sql
+CREATE TABLE notes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL CHECK (length(content) BETWEEN 1 AND 50000),
+
+  -- AI and metadata
+  metadata JSONB DEFAULT '{}',
+  embedding VECTOR(1536), -- OpenAI text-embedding-3-small
+  embedding_hash VARCHAR(64), -- SHA-256 for caching
+
+  -- Organization
+  cluster_id UUID REFERENCES clusters(id) ON DELETE SET NULL,
+
+  -- Soft delete system
+  deleted_at TIMESTAMPTZ,
+
+  -- Timestamps
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  -- Generated search content
+  search_content TSVECTOR GENERATED ALWAYS AS (
+    to_tsvector('english',
+      COALESCE(content, '') || ' ' ||
+      COALESCE(metadata->>'tags', '') || ' ' ||
+      COALESCE(metadata->>'source', '')
+    )
+  ) STORED
+);
+```
+
+#### Note Metadata Schema
 
 ```typescript
-model User {
-  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  email         String    @unique
-  name          String?
-  avatar        String?
-  emailVerified DateTime? @map("email_verified") @db.Timestamptz
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+interface NoteMetadata {
+  // Auto-calculated fields
+  wordCount: number
+  characterCount: number
 
-  preferences Json @default("{ \"theme\": \"system\", \"autoSave\": true, \"notifications\": true, \"clusterSuggestions\": true }")
-
-  subscriptionPlan             UserSubscriptionPlan    @default(free) @map("subscription_plan")
-  subscriptionStatus           UserSubscriptionStatus? @map("subscription_status")
-  subscriptionCurrentPeriodEnd DateTime?               @map("subscription_current_period_end") @db.Timestamptz
-
-  // Relations
-  notes        Note[]
-  clusters     Cluster[]
-  documents    Document[]
-  accounts     Account[]
-  sessions     Session[]
-  activityLogs ActivityLog[]
-  searchIndex  SearchIndex[]
-
-  @@map("users")
+  // User-provided fields
+  tags?: string[] // max 20 tags, each 1-50 chars
+  source?: string // 1-100 chars
+  importance?: 'low' | 'medium' | 'high'
+  sentiment?: 'positive' | 'neutral' | 'negative'
+  categories?: string[] // max 10, each 1-50 chars
+  linkedNoteIds?: string[] // UUIDs, max 50
+  custom?: Record<string, unknown>
 }
 ```
+
+### Clusters Table
+
+AI-generated groupings of related notes.
+
+```sql
+CREATE TABLE clusters (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+
+  -- AI-generated metadata
+  confidence_score NUMERIC(3,2) CHECK (confidence_score BETWEEN 0 AND 1),
+  theme_keywords TEXT[],
+  suggested_tags TEXT[],
+
+  -- Automatic counters (updated by triggers)
+  note_count INTEGER DEFAULT 0,
+  active_note_count INTEGER DEFAULT 0,
+
+  -- Status management
+  status cluster_status DEFAULT 'suggested',
+
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Documents Table
+
+Generated documents from note clusters with sharing capabilities.
+
+```sql
+CREATE TABLE documents (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  cluster_id UUID REFERENCES clusters(id) ON DELETE SET NULL,
+
+  title VARCHAR(500) NOT NULL,
+  content TEXT NOT NULL,
+  format document_format DEFAULT 'markdown',
+
+  -- Sharing and access
+  is_public BOOLEAN DEFAULT false,
+  share_token UUID UNIQUE,
+  expires_at TIMESTAMPTZ,
+
+  -- Version control
+  version INTEGER DEFAULT 1,
+  parent_document_id UUID REFERENCES documents(id),
+
+  -- AI generation metadata
+  generation_metadata JSONB DEFAULT '{}',
+
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Activity Logs Table
+
+Comprehensive user action tracking for analytics and audit.
+
+```sql
+CREATE TABLE activity_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+  -- Action details
+  action VARCHAR(100) NOT NULL,
+  entity_type VARCHAR(50) NOT NULL,
+  entity_id UUID,
+
+  -- Request context
+  ip_address INET,
+  user_agent TEXT,
+
+  -- Additional metadata
+  metadata JSONB DEFAULT '{}',
+
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Supporting Tables
+
+#### Job Queue
+
+```sql
+CREATE TABLE job_queue (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  job_type VARCHAR(100) NOT NULL,
+  payload JSONB NOT NULL,
+  status job_status DEFAULT 'pending',
+  attempts INTEGER DEFAULT 0,
+  max_attempts INTEGER DEFAULT 3,
+  scheduled_for TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  completed_at TIMESTAMPTZ
+);
+```
+
+#### Rate Limits
+
+```sql
+CREATE TABLE rate_limits (
+  id VARCHAR(255) PRIMARY KEY, -- user_id:action or ip:action
+  count INTEGER DEFAULT 0,
+  reset_time TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### Embedding Cache
+
+```sql
+CREATE TABLE embedding_cache (
+  content_hash VARCHAR(64) PRIMARY KEY, -- SHA-256 of content
+  embedding VECTOR(1536) NOT NULL,
+  model VARCHAR(100) NOT NULL DEFAULT 'text-embedding-3-small',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+preferences Json @default("{ \"theme\": \"system\", \"autoSave\": true, \"notifications\": true, \"clusterSuggestions\": true }")
+
+subscriptionPlan UserSubscriptionPlan @default(free) @map("subscription_plan")
+subscriptionStatus UserSubscriptionStatus? @map("subscription_status")
+subscriptionCurrentPeriodEnd DateTime? @map("subscription_current_period_end") @db.Timestamptz
+
+// Relations
+notes Note[]
+clusters Cluster[]
+documents Document[]
+accounts Account[]
+sessions Session[]
+activityLogs ActivityLog[]
+searchIndex SearchIndex[]
+
+@@map("users")
+}
+
+````
 
 #### Note Model
 
@@ -95,7 +365,7 @@ CREATE TABLE notes (
 CREATE INDEX idx_notes_user_created ON notes(user_id, created_at DESC);
 CREATE INDEX idx_notes_cluster ON notes(cluster_id);
 CREATE INDEX idx_notes_updated ON notes(updated_at DESC);
-```
+````
 
 **Key Features:**
 

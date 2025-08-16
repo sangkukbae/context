@@ -203,7 +203,7 @@ export function NoteLog({ className }: NoteLogProps) {
     return (
       <div className={cn('space-y-6', className)}>
         <div className="flex items-center justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
         </div>
       </div>
     )
@@ -214,7 +214,9 @@ export function NoteLog({ className }: NoteLogProps) {
     return (
       <div className={cn('space-y-6', className)}>
         <div className="text-center p-8">
-          <p className="text-gray-600 mb-4">You must be signed in to view and create notes.</p>
+          <p className="text-muted-foreground mb-4">
+            You must be signed in to view and create notes.
+          </p>
           <Button asChild>
             <a href="/auth/sign-in">Sign In</a>
           </Button>
@@ -254,7 +256,7 @@ export function NoteLog({ className }: NoteLogProps) {
           }
         }}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl bg-background">
           <DialogHeader>
             <DialogTitle>Edit Note</DialogTitle>
           </DialogHeader>

@@ -34,6 +34,12 @@ const signUpSchema = z
 
 type SignInFormData = z.infer<typeof signInSchema>
 type SignUpFormData = z.infer<typeof signUpSchema>
+type FormData = SignInFormData | SignUpFormData
+
+// Type guards for form data
+function isSignUpFormData(data: FormData): data is SignUpFormData {
+  return 'name' in data && 'confirmPassword' in data
+}
 
 interface AuthFormProps {
   mode: 'sign-in' | 'sign-up'
@@ -46,8 +52,8 @@ export function AuthForm({ mode, redirectTo, onSuccess, onModeChange }: AuthForm
   const [showPassword, setShowPassword] = useState(false)
   const { isLoading, error, execute, clearError } = useAuthOperation()
 
-  const form = useForm<SignInFormData | SignUpFormData>({
-    resolver: zodResolver(mode === 'sign-in' ? signInSchema : signUpSchema) as any,
+  const form = useForm<FormData>({
+    resolver: zodResolver(mode === 'sign-in' ? signInSchema : signUpSchema),
     defaultValues: {
       email: '',
       password: '',
@@ -55,7 +61,7 @@ export function AuthForm({ mode, redirectTo, onSuccess, onModeChange }: AuthForm
     },
   })
 
-  const onSubmit = async (data: SignInFormData | SignUpFormData) => {
+  const onSubmit = async (data: FormData) => {
     clearError()
 
     if (mode === 'sign-in') {
@@ -67,9 +73,11 @@ export function AuthForm({ mode, redirectTo, onSuccess, onModeChange }: AuthForm
         }
       }
     } else {
-      const signUpData = data as SignUpFormData
+      if (!isSignUpFormData(data)) {
+        throw new Error('Invalid form data for sign up')
+      }
       const result = await execute(() =>
-        signUpWithPassword(signUpData.email, signUpData.password, signUpData.name, redirectTo)
+        signUpWithPassword(data.email, data.password, data.name, redirectTo)
       )
       if (result !== null) {
         // Show success message for email confirmation
@@ -159,12 +167,10 @@ export function AuthForm({ mode, redirectTo, onSuccess, onModeChange }: AuthForm
               type="text"
               placeholder="Enter your name"
               disabled={isLoading}
-              {...form.register('name' as any)}
+              {...form.register('name' as keyof FormData)}
             />
-            {isSignUp && (form.formState.errors as any).name && (
-              <p className="text-sm text-red-600 mt-1">
-                {(form.formState.errors as any).name.message}
-              </p>
+            {'name' in form.formState.errors && form.formState.errors.name && (
+              <p className="text-sm text-red-600 mt-1">{form.formState.errors.name.message}</p>
             )}
           </div>
         )}
@@ -205,13 +211,14 @@ export function AuthForm({ mode, redirectTo, onSuccess, onModeChange }: AuthForm
               type={showPassword ? 'text' : 'password'}
               placeholder="Confirm your password"
               disabled={isLoading}
-              {...form.register('confirmPassword' as any)}
+              {...form.register('confirmPassword' as keyof FormData)}
             />
-            {isSignUp && (form.formState.errors as any).confirmPassword && (
-              <p className="text-sm text-red-600 mt-1">
-                {(form.formState.errors as any).confirmPassword?.message}
-              </p>
-            )}
+            {'confirmPassword' in form.formState.errors &&
+              form.formState.errors.confirmPassword && (
+                <p className="text-sm text-red-600 mt-1">
+                  {form.formState.errors.confirmPassword.message}
+                </p>
+              )}
           </div>
         )}
 

@@ -1,15 +1,28 @@
 # Components Reference
 
-This document provides comprehensive reference for UI components in the Context application.
+This document provides comprehensive reference for UI components in the Context application, including shadcn/ui components, authentication components, and note management components.
+
+## Table of Contents
+
+- [Component Library Overview](#component-library-overview)
+- [shadcn/ui Components](#shadcnui-components)
+- [Authentication Components](#authentication-components)
+- [Note Management Components](#note-management-components)
+- [Component Patterns](#component-patterns)
+- [Styling and Theming](#styling-and-theming)
+- [Accessibility](#accessibility)
+- [Examples](#examples)
 
 ## Component Library Overview
 
 Context uses **shadcn/ui** as the primary component library, providing:
 
-- **Accessibility**: Built on Radix UI primitives
-- **Customization**: Full control over styling and behavior
+- **Accessibility**: Built on Radix UI primitives with comprehensive ARIA support
+- **Customization**: Full control over styling and behavior with Tailwind CSS
 - **Performance**: Zero runtime overhead (copy-paste architecture)
-- **Type Safety**: Complete TypeScript support
+- **Type Safety**: Complete TypeScript support with proper prop types
+- **Consistency**: Unified design system with CSS custom properties
+- **Developer Experience**: Hot reloading and excellent IDE integration
 
 ## Configuration
 
@@ -37,7 +50,83 @@ Components are configured via `components.json`:
 }
 ```
 
-## Available Components
+## shadcn/ui Components
+
+The following shadcn/ui components are available in the application:
+
+### Form Components
+
+#### Button (`/components/ui/button.tsx`)
+
+Primary interaction component with multiple variants and sizes.
+
+```typescript
+import { Button } from '@/components/ui/button'
+
+// Variants: default, destructive, outline, secondary, ghost, link
+// Sizes: default, sm, lg, icon
+<Button variant="default" size="lg">Click me</Button>
+<Button variant="destructive" onClick={handleDelete}>Delete</Button>
+<Button variant="ghost" size="icon"><IconTrash /></Button>
+
+// Polymorphic rendering with asChild
+<Button asChild>
+  <Link href="/dashboard">Go to Dashboard</Link>
+</Button>
+```
+
+#### Input (`/components/ui/input.tsx`)
+
+Text input with consistent styling and validation support.
+
+```typescript
+import { Input } from '@/components/ui/input'
+
+<Input
+  type="email"
+  placeholder="Enter your email"
+  className="max-w-sm"
+/>
+```
+
+#### Textarea (`/components/ui/textarea.tsx`)
+
+Multi-line text input with auto-resize capabilities.
+
+```typescript
+import { Textarea } from '@/components/ui/textarea'
+
+<Textarea
+  placeholder="Enter your note content..."
+  className="min-h-[100px]"
+/>
+```
+
+#### Form (`/components/ui/form.tsx`)
+
+Complete form system with React Hook Form integration.
+
+```typescript
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+
+<Form {...form}>
+  <form onSubmit={form.handleSubmit(onSubmit)}>
+    <FormField
+      control={form.control}
+      name="username"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Username</FormLabel>
+          <FormControl>
+            <Input placeholder="Enter username" {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  </form>
+</Form>
+```
 
 ### Layout Components
 
@@ -47,6 +136,282 @@ Flexible container component for grouping related content.
 
 ```typescript
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
+
+<Card>
+  <CardHeader>
+    <CardTitle>Note Statistics</CardTitle>
+    <CardDescription>Your writing activity</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p>Total notes: 42</p>
+  </CardContent>
+  <CardFooter>
+    <Button>View Details</Button>
+  </CardFooter>
+</Card>
+```
+
+#### Separator (`/components/ui/separator.tsx`)
+
+Visual divider for content sections.
+
+```typescript
+import { Separator } from '@/components/ui/separator'
+
+<div>
+  <h2>Section 1</h2>
+  <Separator className="my-4" />
+  <h2>Section 2</h2>
+</div>
+```
+
+#### Tabs (`/components/ui/tabs.tsx`)
+
+Tabbed interface for organizing content.
+
+```typescript
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
+<Tabs defaultValue="notes" className="w-[400px]">
+  <TabsList>
+    <TabsTrigger value="notes">Notes</TabsTrigger>
+    <TabsTrigger value="clusters">Clusters</TabsTrigger>
+  </TabsList>
+  <TabsContent value="notes">Your notes content here</TabsContent>
+  <TabsContent value="clusters">Your clusters content here</TabsContent>
+</Tabs>
+```
+
+### Interactive Components
+
+#### Dialog (`/components/ui/dialog.tsx`)
+
+Modal dialog for important interactions.
+
+```typescript
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+
+<Dialog>
+  <DialogTrigger asChild>
+    <Button variant="outline">Edit Note</Button>
+  </DialogTrigger>
+  <DialogContent className="sm:max-w-[425px]">
+    <DialogHeader>
+      <DialogTitle>Edit note</DialogTitle>
+      <DialogDescription>Make changes to your note here.</DialogDescription>
+    </DialogHeader>
+    {/* Form content */}
+  </DialogContent>
+</Dialog>
+```
+
+#### Dropdown Menu (`/components/ui/dropdown-menu.tsx`)
+
+Context menu for actions and navigation.
+
+```typescript
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+
+<DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button variant="ghost" size="icon">
+      <MoreVertical className="h-4 w-4" />
+    </Button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent align="end">
+    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+    <DropdownMenuItem>Edit</DropdownMenuItem>
+    <DropdownMenuItem>Share</DropdownMenuItem>
+    <DropdownMenuSeparator />
+    <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+```
+
+#### Popover (`/components/ui/popover.tsx`) **[Recently Added]**
+
+Floating content container for secondary information.
+
+```typescript
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+
+<Popover>
+  <PopoverTrigger asChild>
+    <Button variant="outline">Open popover</Button>
+  </PopoverTrigger>
+  <PopoverContent className="w-80">
+    <div className="grid gap-4">
+      <div className="space-y-2">
+        <h4 className="font-medium leading-none">Dimensions</h4>
+        <p className="text-sm text-muted-foreground">Set the dimensions for the layer.</p>
+      </div>
+    </div>
+  </PopoverContent>
+</Popover>
+```
+
+### Feedback Components
+
+#### Alert (`/components/ui/alert.tsx`)
+
+Contextual feedback messages.
+
+```typescript
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AlertCircle } from 'lucide-react'
+
+<Alert>
+  <AlertCircle className="h-4 w-4" />
+  <AlertTitle>Error</AlertTitle>
+  <AlertDescription>Your session has expired. Please log in again.</AlertDescription>
+</Alert>
+```
+
+#### Badge (`/components/ui/badge.tsx`)
+
+Small status indicators.
+
+```typescript
+import { Badge } from '@/components/ui/badge'
+
+<Badge variant="default">New</Badge>
+<Badge variant="secondary">Draft</Badge>
+<Badge variant="destructive">Error</Badge>
+<Badge variant="outline">Outline</Badge>
+```
+
+#### Progress (`/components/ui/progress.tsx`)
+
+Progress indicator for loading states.
+
+```typescript
+import { Progress } from '@/components/ui/progress'
+
+<Progress value={33} className="w-[60%]" />
+```
+
+## Authentication Components
+
+### AuthForm (`/components/auth/auth-form.tsx`)
+
+Unified authentication form supporting both sign-in and sign-up modes.
+
+#### Features
+
+- **Dual Mode**: Toggle between sign-in and sign-up
+- **OAuth Integration**: Google and GitHub providers
+- **Form Validation**: Zod schemas with real-time validation
+- **Password Features**: Show/hide toggle, strength requirements
+- **Error Handling**: Contextual error messages
+- **Responsive Design**: Mobile-optimized layout
+
+#### Usage
+
+```typescript
+import { AuthForm } from '@/components/auth'
+
+<AuthForm
+  mode="sign-in" // or "sign-up"
+  onSuccess={() => router.push('/dashboard')}
+  onModeChange={(mode) => setMode(mode)}
+/>
+```
+
+### UserNav (`/components/auth/user-nav.tsx`)
+
+User navigation component with avatar and action menu.
+
+#### Features
+
+- **User Avatar**: Image fallback to initials
+- **Subscription Indicators**: Visual plan status
+- **Action Menu**: Profile, settings, upgrade, logout
+- **Loading States**: Skeleton screens during auth checks
+
+#### Usage
+
+```typescript
+import { UserNav } from '@/components/auth'
+
+<UserNav />
+```
+
+## Note Management Components
+
+### NoteLog (`/components/log/note-log.tsx`)
+
+Main orchestrating component for note management with CRUD operations.
+
+#### Features
+
+- **CRUD Operations**: Create, read, update, delete notes
+- **Optimistic Updates**: Immediate UI feedback
+- **Error Handling**: Graceful error recovery
+- **Performance Monitoring**: Development-time tracking
+
+#### Usage
+
+```typescript
+import { NoteLog } from '@/components/log'
+
+<NoteLog userId={user.id} />
+```
+
+### NoteInput (`/components/log/note-input.tsx`)
+
+Enhanced note input component with advanced features.
+
+#### Features
+
+- **Auto-resize Textarea**: Smooth height adjustments
+- **Real-time Validation**: Character limits with warnings
+- **Auto-save**: Debounced saving with status indicators
+- **Performance Optimization**: <200ms input lag requirement
+- **Keyboard Shortcuts**: Cmd/Ctrl+Enter submission
+
+#### Usage
+
+```typescript
+import { NoteInput } from '@/components/log'
+
+<NoteInput
+  onSubmit={handleNoteSubmit}
+  autoSave={true}
+  maxLength={50000}
+/>
+```
+
+### NoteFeed (`/components/log/note-feed.tsx`)
+
+Infinite-scroll note display with rich metadata.
+
+#### Features
+
+- **Infinite Scroll**: Cursor-based pagination
+- **Rich Metadata**: Tags, sentiment, word count display
+- **Edit/Delete Actions**: Modal editing with validation
+- **Loading States**: Skeleton screens and progressive loading
+
+#### Usage
+
+```typescript
+import { NoteFeed } from '@/components/log'
+
+<NoteFeed
+  notes={notes}
+  onEdit={handleEdit}
+  onDelete={handleDelete}
+  hasMore={hasMore}
+  onLoadMore={loadMore}
+/>
+```
 
 <Card>
   <CardHeader>

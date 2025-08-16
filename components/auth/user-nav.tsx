@@ -33,9 +33,9 @@ export function UserNav({ className }: UserNavProps) {
   if (status === 'loading') {
     return (
       <div className={`flex items-center space-x-2 ${className}`}>
-        <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+        <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
         <div className="hidden md:block">
-          <div className="w-20 h-4 bg-gray-200 animate-pulse rounded" />
+          <div className="w-20 h-4 bg-muted animate-pulse rounded" />
         </div>
       </div>
     )
@@ -73,8 +73,8 @@ export function UserNav({ className }: UserNavProps) {
                 className="w-8 h-8 rounded-full object-cover"
               />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                <span className="text-sm font-medium text-blue-700">
+              <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
+                <span className="text-sm font-medium text-accent">
                   {user.name?.[0]?.toUpperCase() || user.email[0]?.toUpperCase() || 'U'}
                 </span>
               </div>
@@ -85,10 +85,10 @@ export function UserNav({ className }: UserNavProps) {
           </div>
 
           <div className="hidden md:block">
-            <p className="text-sm font-medium text-gray-900">
+            <p className="text-sm font-medium text-foreground">
               {user.name || user.email.split('@')[0]}
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               {user.subscriptionPlan.charAt(0).toUpperCase() + user.subscriptionPlan.slice(1)} Plan
             </p>
           </div>

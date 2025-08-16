@@ -3,6 +3,7 @@ import { handle } from 'hono/vercel'
 import type { ApiResponse } from '@/lib/types'
 import { env, isDevelopment, validateRequiredServices } from '@/lib/env'
 import { notesRouter } from '@/lib/api/routes/notes'
+import { searchRouter } from '@/lib/api/routes/search'
 
 // Validate required services on startup
 if (isDevelopment) {
@@ -18,6 +19,7 @@ const app = new Hono().basePath('/api')
 
 // Mount API routes
 app.route('/notes', notesRouter)
+app.route('/search', searchRouter)
 
 // Health check endpoint
 app.get('/health', c => {

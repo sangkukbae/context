@@ -179,7 +179,7 @@ export function NoteInput({
                       data-note-input="true"
                       data-testid="note-input-textarea"
                       className={cn(
-                        'min-h-[120px] max-h-[400px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground transition-colors duration-200',
+                        'min-h-[120px] max-h-[400px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 typography-input placeholder:text-muted-foreground transition-colors duration-200',
                         isOverLimit && 'border-destructive focus-visible:ring-destructive',
                         isNearLimit &&
                           !isOverLimit &&
@@ -188,7 +188,7 @@ export function NoteInput({
                     />
 
                     {/* Character and word count with status indicators */}
-                    <div className="absolute bottom-2 right-2 flex items-center gap-2 text-xs">
+                    <div className="absolute bottom-2 right-2 flex items-center gap-2 typography-metadata">
                       {autoSave && autoSaveStatus !== 'idle' && (
                         <div className="flex items-center gap-1">
                           {autoSaveStatus === 'saving' && (
@@ -229,7 +229,7 @@ export function NoteInput({
           />
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-4 typography-metadata text-muted-foreground">
               {/* Keyboard shortcut hint */}
               <div className="flex items-center">
                 <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
@@ -253,7 +253,7 @@ export function NoteInput({
 
               {/* Last saved indicator */}
               {lastSaved && (
-                <div className="text-xs text-muted-foreground">
+                <div className="typography-metadata text-muted-foreground">
                   Last saved: {lastSaved.toLocaleTimeString()}
                 </div>
               )}
