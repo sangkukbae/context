@@ -99,6 +99,14 @@ pnpm pre-commit   # Run lint-staged manually
 - Follow existing patterns for component composition and styling
 - Maintain accessibility through Radix UI primitives
 
+### UI Theming & Color Guidelines
+
+- **Always use semantic color tokens**: Use `bg-card`/`text-card-foreground` for main surfaces, `bg-popover`/`text-popover-foreground` for overlays, `bg-background`/`text-foreground` for page backgrounds
+- **Avoid hardcoded colors**: Never use `bg-white`, `bg-black`, `text-gray-900` etc. Always prefer semantic tokens like `bg-card`, `text-card-foreground`, `text-muted-foreground`
+- **Test both theme modes**: Always verify components work correctly in both light and dark modes
+- **OKLCH color system**: The project uses advanced OKLCH colors for better color consistency and accessibility - semantic tokens automatically adapt to this system
+- **Component hierarchy**: Dialog overlays require `bg-popover` tokens, main content uses `bg-card` tokens to ensure proper layering
+
 ### Type Safety
 
 - Leverage shared types from `lib/types/` across frontend and API
