@@ -8,7 +8,7 @@
  */
 import { test, expect } from '@playwright/test'
 
-const baseURL = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3005'
+const _baseURL = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3005'
 
 test.describe('SearchFilters Select Component Fixes - UI Only', () => {
   test.beforeEach(async ({ page }) => {
@@ -27,7 +27,7 @@ test.describe('SearchFilters Select Component Fixes - UI Only', () => {
       })
 
       // Try to click the Filters button
-      const filtersButton = page
+      const _filtersButton = page
         .locator('button')
         .filter({ hasText: /filters/i })
         .first()
@@ -39,7 +39,7 @@ test.describe('SearchFilters Select Component Fixes - UI Only', () => {
         await page.waitForTimeout(1000)
 
         // Check for the specific Radix UI SelectItem error
-        const radixSelectItemErrors = consoleErrors.filter(
+        const _radixSelectItemErrors = consoleErrors.filter(
           error =>
             error.toLowerCase().includes('select.item') &&
             error.toLowerCase().includes('empty string')
@@ -70,7 +70,7 @@ test.describe('SearchFilters Select Component Fixes - UI Only', () => {
       await page.waitForTimeout(2000)
 
       // Check for React warnings about value props
-      const valueWarnings = consoleMessages.filter(
+      const _valueWarnings = consoleMessages.filter(
         msg =>
           msg.toLowerCase().includes('value') &&
           msg.toLowerCase().includes('prop') &&
@@ -85,7 +85,7 @@ test.describe('SearchFilters Select Component Fixes - UI Only', () => {
   test.describe('SearchFilters Component Structure', () => {
     test('should have accessible search filters button', async ({ page }) => {
       // Look for filters button with various possible selectors
-      const filtersButton = page
+      const _filtersButton = page
         .locator('button')
         .filter({ hasText: /filter/i })
         .first()
@@ -99,31 +99,31 @@ test.describe('SearchFilters Select Component Fixes - UI Only', () => {
         await filtersButton.click()
 
         // Look for dialog or dropdown
-        const dialog = page.locator('[role="dialog"]')
-        const dropdown = page.locator('[role="menu"], [role="listbox"]')
+        const _dialog = page.locator('[role="dialog"]')
+        const _dropdown = page.locator('[role="menu"], [role="listbox"]')
 
         if (await dialog.isVisible()) {
           console.log('✅ Filters dialog opened successfully')
 
           // Look for Select components in the dialog
-          const selectComponents = dialog.locator('[role="combobox"]')
-          const selectCount = await selectComponents.count()
+          const _selectComponents = dialog.locator('[role="combobox"]')
+          const _selectCount = await selectComponents.count()
           console.log(`✅ Found ${selectCount} Select components in filters dialog`)
 
           if (selectCount > 0) {
             // Try to interact with the first Select component
-            const firstSelect = selectComponents.first()
+            const _firstSelect = selectComponents.first()
             await firstSelect.click()
 
             // Look for options
-            const options = page.locator('[role="option"]')
-            const optionCount = await options.count()
+            const _options = page.locator('[role="option"]')
+            const _optionCount = await options.count()
             console.log(`✅ Found ${optionCount} options in Select dropdown`)
 
             if (optionCount > 0) {
               // Verify "Any" options exist (our fix)
-              const anyOptions = options.filter({ hasText: /any/i })
-              const anyCount = await anyOptions.count()
+              const _anyOptions = options.filter({ hasText: /any/i })
+              const _anyCount = await anyOptions.count()
               console.log(`✅ Found ${anyCount} "Any" options (should have non-empty values)`)
             }
           }
@@ -140,7 +140,7 @@ test.describe('SearchFilters Select Component Fixes - UI Only', () => {
       await page.goto(`${baseURL}/search`)
 
       // Try to open filters if available
-      const filtersButton = page
+      const _filtersButton = page
         .locator('button')
         .filter({ hasText: /filter/i })
         .first()
@@ -150,21 +150,21 @@ test.describe('SearchFilters Select Component Fixes - UI Only', () => {
         await page.waitForTimeout(500)
 
         // Look for any select components
-        const selectTriggers = page.locator('[role="combobox"]')
-        const selectCount = await selectTriggers.count()
+        const _selectTriggers = page.locator('[role="combobox"]')
+        const _selectCount = await selectTriggers.count()
 
         for (let i = 0; i < selectCount; i++) {
-          const selectTrigger = selectTriggers.nth(i)
+          const _selectTrigger = selectTriggers.nth(i)
           await selectTrigger.click()
           await page.waitForTimeout(200)
 
           // Check all options in this select
-          const options = page.locator('[role="option"]')
-          const optionCount = await options.count()
+          const _options = page.locator('[role="option"]')
+          const _optionCount = await options.count()
 
           for (let j = 0; j < optionCount; j++) {
-            const option = options.nth(j)
-            const value =
+            const _option = options.nth(j)
+            const _value =
               (await option.getAttribute('data-value')) || (await option.getAttribute('value'))
 
             // Verify no option has an empty string value
@@ -197,7 +197,7 @@ test.describe('SearchFilters Select Component Fixes - UI Only', () => {
       await page.waitForTimeout(3000)
 
       // Filter out expected warnings
-      const criticalErrors = jsErrors.filter(
+      const _criticalErrors = jsErrors.filter(
         error =>
           !error.includes('Warning') &&
           !error.includes('Download the React DevTools') &&
@@ -217,13 +217,13 @@ test.describe('SearchFilters Select Component Fixes - UI Only', () => {
       await page.goto(`${baseURL}/search`)
 
       // Check for basic search UI
-      const searchInput = page
+      const _searchInput = page
         .locator('input[type="search"], input[placeholder*="search" i]')
         .first()
-      const searchForm = page.locator('form').first()
+      const _searchForm = page.locator('form').first()
 
-      const hasSearchInput = await searchInput.isVisible()
-      const hasSearchForm = await searchForm.isVisible()
+      const _hasSearchInput = await searchInput.isVisible()
+      const _hasSearchForm = await searchForm.isVisible()
 
       console.log(`Search input visible: ${hasSearchInput}`)
       console.log(`Search form visible: ${hasSearchForm}`)
@@ -245,7 +245,7 @@ test.describe('SearchFilters Select Component Fixes - UI Only', () => {
       })
 
       // Try to open filters if available
-      const filtersButton = page
+      const _filtersButton = page
         .locator('button')
         .filter({ hasText: /filter/i })
         .first()

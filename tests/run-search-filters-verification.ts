@@ -55,7 +55,7 @@ class SearchFiltersVerifier {
   private async runSearchFiltersTests() {
     console.log('📋 Running SearchFilters Component Tests...\n')
 
-    const testSuites = [
+    const _testSuites = [
       {
         name: 'Primary Functionality Tests',
         command:
@@ -91,7 +91,7 @@ class SearchFiltersVerifier {
     console.log('🔄 Running Regression Tests...\n')
 
     // Run related search component tests to ensure no regressions
-    const regressionSuites = [
+    const _regressionSuites = [
       {
         name: 'Search Components Regression',
         command:
@@ -111,17 +111,17 @@ class SearchFiltersVerifier {
 
   private async runTestSuite(suiteName: string, command: string): Promise<void> {
     console.log(`Running: ${suiteName}`)
-    const suiteStartTime = Date.now()
+    const _suiteStartTime = Date.now()
 
     try {
-      const output = execSync(command, {
+      const _output = execSync(command, {
         encoding: 'utf8',
         stdio: 'pipe',
         cwd: process.cwd(),
       })
 
-      const duration = Date.now() - suiteStartTime
-      const testResults = this.parsePlaywrightOutput(output)
+      const _duration = Date.now() - suiteStartTime
+      const _testResults = this.parsePlaywrightOutput(output)
 
       const suite: TestSuite = {
         name: suiteName,
@@ -139,7 +139,7 @@ class SearchFiltersVerifier {
         console.log(`❌ ${suiteName} - ${suite.failedCount} tests failed (${duration}ms)\n`)
       }
     } catch (error: unknown) {
-      const duration = Date.now() - suiteStartTime
+      const _duration = Date.now() - suiteStartTime
       const suite: TestSuite = {
         name: suiteName,
         tests: [
@@ -163,13 +163,13 @@ class SearchFiltersVerifier {
 
   private parsePlaywrightOutput(output: string): TestResult[] {
     const tests: TestResult[] = []
-    const lines = output.split('\n')
+    const _lines = output.split('\n')
 
     for (const line of lines) {
       // Parse Playwright test results
       if (line.includes('✓') || line.includes('✗')) {
-        const passed = line.includes('✓')
-        const nameMatch = line.match(/[✓✗]\s+(.+?)\s+\((\d+)ms\)/)
+        const _passed = line.includes('✓')
+        const _nameMatch = line.match(/[✓✗]\s+(.+?)\s+\((\d+)ms\)/)
         if (nameMatch) {
           tests.push({
             name: nameMatch[1].trim(),
@@ -193,10 +193,10 @@ class SearchFiltersVerifier {
   }
 
   private generateReport() {
-    const totalDuration = Date.now() - this.startTime
-    const totalTests = this.results.reduce((sum, suite) => sum + suite.tests.length, 0)
-    const totalPassed = this.results.reduce((sum, suite) => sum + suite.passedCount, 0)
-    const totalFailed = this.results.reduce((sum, suite) => sum + suite.failedCount, 0)
+    const _totalDuration = Date.now() - this.startTime
+    const _totalTests = this.results.reduce((sum, suite) => sum + suite.tests.length, 0)
+    const _totalPassed = this.results.reduce((sum, suite) => sum + suite.passedCount, 0)
+    const _totalFailed = this.results.reduce((sum, suite) => sum + suite.failedCount, 0)
 
     console.log('\n' + '='.repeat(80))
     console.log('🎯 SEARCHFILTERS COMPONENT VERIFICATION REPORT')
@@ -250,7 +250,7 @@ class SearchFiltersVerifier {
     }
 
     // Generate JSON report
-    const reportData = {
+    const _reportData = {
       timestamp: new Date().toISOString(),
       summary: {
         totalTests,
@@ -270,7 +270,7 @@ class SearchFiltersVerifier {
       ],
     }
 
-    const reportPath = path.join(process.cwd(), 'search-filters-verification-report.json')
+    const _reportPath = path.join(process.cwd(), 'search-filters-verification-report.json')
     writeFileSync(reportPath, JSON.stringify(reportData, null, 2))
     console.log(`\n📄 Detailed report saved to: ${reportPath}`)
 
@@ -280,7 +280,7 @@ class SearchFiltersVerifier {
 
 // Run verification if called directly
 if (require.main === module) {
-  const verifier = new SearchFiltersVerifier()
+  const _verifier = new SearchFiltersVerifier()
   verifier.runVerification().catch(error => {
     console.error('❌ Verification script failed:', error)
     process.exit(1)

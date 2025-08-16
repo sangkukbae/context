@@ -10,7 +10,7 @@
 import { test, expect } from '../fixtures/auth'
 import { setupTestData, cleanupTestData } from '../fixtures/search-data'
 
-const baseURL = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3002'
+const _baseURL = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3002'
 
 test.describe('SearchFilters Component', () => {
   test.beforeEach(async ({ page, authenticatedUser }) => {
@@ -42,17 +42,17 @@ test.describe('SearchFilters Component', () => {
       })
 
       // Click the Filters button
-      const filtersButton = page.locator('button:has-text("Filters")')
+      const _filtersButton = page.locator('button:has-text("Filters")')
       await expect(filtersButton).toBeVisible()
       await filtersButton.click()
 
       // Verify dialog opens
-      const filtersDialog = page.locator('[role="dialog"]')
+      const _filtersDialog = page.locator('[role="dialog"]')
       await expect(filtersDialog).toBeVisible()
       await expect(filtersDialog.locator('text="Search Filters"')).toBeVisible()
 
       // Verify no Radix UI SelectItem errors occurred
-      const radixErrors = consoleLogs.filter(
+      const _radixErrors = consoleLogs.filter(
         log => log.includes('Select.Item') && log.includes('empty string')
       )
       expect(radixErrors).toHaveLength(0)
@@ -64,13 +64,13 @@ test.describe('SearchFilters Component', () => {
       await expect(page.locator('[role="dialog"]')).toBeVisible()
 
       // Find and click importance Select trigger
-      const importanceSection = page.locator('text="Importance"').locator('..')
-      const importanceSelect = importanceSection.locator('[role="combobox"]')
+      const _importanceSection = page.locator('text="Importance"').locator('..')
+      const _importanceSelect = importanceSection.locator('[role="combobox"]')
       await expect(importanceSelect).toBeVisible()
       await importanceSelect.click()
 
       // Verify dropdown opens
-      const selectContent = page.locator('[role="listbox"]')
+      const _selectContent = page.locator('[role="listbox"]')
       await expect(selectContent).toBeVisible()
 
       // Verify all importance options are present with correct values
@@ -88,13 +88,13 @@ test.describe('SearchFilters Component', () => {
       await expect(page.locator('[role="dialog"]')).toBeVisible()
 
       // Find and click sentiment Select trigger
-      const sentimentSection = page.locator('text="Sentiment"').locator('..')
-      const sentimentSelect = sentimentSection.locator('[role="combobox"]')
+      const _sentimentSection = page.locator('text="Sentiment"').locator('..')
+      const _sentimentSelect = sentimentSection.locator('[role="combobox"]')
       await expect(sentimentSelect).toBeVisible()
       await sentimentSelect.click()
 
       // Verify dropdown opens
-      const selectContent = page.locator('[role="listbox"]')
+      const _selectContent = page.locator('[role="listbox"]')
       await expect(selectContent).toBeVisible()
 
       // Verify all sentiment options are present with correct values
@@ -109,11 +109,11 @@ test.describe('SearchFilters Component', () => {
       await page.locator('button:has-text("Filters")').click()
 
       // Open importance dropdown and select "Any importance"
-      const importanceSection = page.locator('text="Importance"').locator('..')
-      const importanceSelect = importanceSection.locator('[role="combobox"]')
+      const _importanceSection = page.locator('text="Importance"').locator('..')
+      const _importanceSelect = importanceSection.locator('[role="combobox"]')
       await importanceSelect.click()
 
-      const anyImportanceOption = page.locator('[role="option"]:has-text("Any importance")')
+      const _anyImportanceOption = page.locator('[role="option"]:has-text("Any importance")')
       await anyImportanceOption.click()
 
       // Verify selection is displayed
@@ -123,7 +123,7 @@ test.describe('SearchFilters Component', () => {
       await page.locator('button:has-text("Apply Filters")').click()
       await page.locator('button:has-text("Filters")').click()
 
-      const reopenedImportanceSelect = page
+      const _reopenedImportanceSelect = page
         .locator('text="Importance"')
         .locator('..')
         .locator('[role="combobox"]')
@@ -135,11 +135,11 @@ test.describe('SearchFilters Component', () => {
       await page.locator('button:has-text("Filters")').click()
 
       // Open sentiment dropdown and select "Any sentiment"
-      const sentimentSection = page.locator('text="Sentiment"').locator('..')
-      const sentimentSelect = sentimentSection.locator('[role="combobox"]')
+      const _sentimentSection = page.locator('text="Sentiment"').locator('..')
+      const _sentimentSelect = sentimentSection.locator('[role="combobox"]')
       await sentimentSelect.click()
 
-      const anySentimentOption = page.locator('[role="option"]:has-text("Any sentiment")')
+      const _anySentimentOption = page.locator('[role="option"]:has-text("Any sentiment")')
       await anySentimentOption.click()
 
       // Verify selection is displayed
@@ -149,7 +149,7 @@ test.describe('SearchFilters Component', () => {
       await page.locator('button:has-text("Apply Filters")').click()
       await page.locator('button:has-text("Filters")').click()
 
-      const reopenedSentimentSelect = page
+      const _reopenedSentimentSelect = page
         .locator('text="Sentiment"')
         .locator('..')
         .locator('[role="combobox"]')
@@ -163,15 +163,15 @@ test.describe('SearchFilters Component', () => {
       await page.locator('button:has-text("Filters")').click()
 
       // Test selecting specific importance
-      const importanceSection = page.locator('text="Importance"').locator('..')
-      const importanceSelect = importanceSection.locator('[role="combobox"]')
+      const _importanceSection = page.locator('text="Importance"').locator('..')
+      const _importanceSelect = importanceSection.locator('[role="combobox"]')
       await importanceSelect.click()
       await page.locator('[role="option"]:has-text("High")').click()
       await expect(importanceSelect).toContainText('High')
 
       // Verify filter count increases
       await page.locator('button:has-text("Apply Filters")').click()
-      const filtersButton = page.locator('button:has-text("Filters")')
+      const _filtersButton = page.locator('button:has-text("Filters")')
       await expect(filtersButton.locator('.badge, [class*="badge"]')).toBeVisible()
 
       // Clear by selecting "Any importance"
@@ -189,15 +189,15 @@ test.describe('SearchFilters Component', () => {
       await page.locator('button:has-text("Filters")').click()
 
       // Test selecting specific sentiment
-      const sentimentSection = page.locator('text="Sentiment"').locator('..')
-      const sentimentSelect = sentimentSection.locator('[role="combobox"]')
+      const _sentimentSection = page.locator('text="Sentiment"').locator('..')
+      const _sentimentSelect = sentimentSection.locator('[role="combobox"]')
       await sentimentSelect.click()
       await page.locator('[role="option"]:has-text("Positive")').click()
       await expect(sentimentSelect).toContainText('Positive')
 
       // Verify filter count increases
       await page.locator('button:has-text("Apply Filters")').click()
-      const filtersButton = page.locator('button:has-text("Filters")')
+      const _filtersButton = page.locator('button:has-text("Filters")')
       await expect(filtersButton.locator('.badge, [class*="badge"]')).toBeVisible()
 
       // Clear by selecting "Any sentiment"
@@ -215,14 +215,14 @@ test.describe('SearchFilters Component', () => {
       await page.locator('button:has-text("Filters")').click()
 
       // Add multiple filters
-      const importanceSelect = page
+      const _importanceSelect = page
         .locator('text="Importance"')
         .locator('..')
         .locator('[role="combobox"]')
       await importanceSelect.click()
       await page.locator('[role="option"]:has-text("High")').click()
 
-      const sentimentSelect = page
+      const _sentimentSelect = page
         .locator('text="Sentiment"')
         .locator('..')
         .locator('[role="combobox"]')
@@ -230,15 +230,15 @@ test.describe('SearchFilters Component', () => {
       await page.locator('[role="option"]:has-text("Positive")').click()
 
       // Add a tag filter
-      const tagInput = page.locator('input[placeholder*="Add tags"]')
+      const _tagInput = page.locator('input[placeholder*="Add tags"]')
       await tagInput.fill('machine-learning')
       await tagInput.press('Enter')
 
       // Apply filters and check count
       await page.locator('button:has-text("Apply Filters")').click()
 
-      const filtersButton = page.locator('button:has-text("Filters")')
-      const filterBadge = filtersButton.locator('.badge, [class*="badge"]')
+      const _filtersButton = page.locator('button:has-text("Filters")')
+      const _filterBadge = filtersButton.locator('.badge, [class*="badge"]')
       await expect(filterBadge).toBeVisible()
       await expect(filterBadge).toContainText('3') // importance + sentiment + tags
     })
@@ -248,7 +248,7 @@ test.describe('SearchFilters Component', () => {
       await page.locator('button:has-text("Filters")').click()
 
       // Add importance filter
-      const importanceSelect = page
+      const _importanceSelect = page
         .locator('text="Importance"')
         .locator('..')
         .locator('[role="combobox"]')
@@ -256,7 +256,7 @@ test.describe('SearchFilters Component', () => {
       await page.locator('[role="option"]:has-text("High")').click()
 
       // Add sentiment filter
-      const sentimentSelect = page
+      const _sentimentSelect = page
         .locator('text="Sentiment"')
         .locator('..')
         .locator('[role="combobox"]')
@@ -264,7 +264,7 @@ test.describe('SearchFilters Component', () => {
       await page.locator('[role="option"]:has-text("Positive")').click()
 
       // Add tag
-      const tagInput = page.locator('input[placeholder*="Add tags"]')
+      const _tagInput = page.locator('input[placeholder*="Add tags"]')
       await tagInput.fill('test-tag')
       await tagInput.press('Enter')
 
@@ -278,7 +278,7 @@ test.describe('SearchFilters Component', () => {
 
       // Apply and verify no active filters
       await page.locator('button:has-text("Apply Filters")').click()
-      const filtersButton = page.locator('button:has-text("Filters")')
+      const _filtersButton = page.locator('button:has-text("Filters")')
       await expect(filtersButton.locator('.badge, [class*="badge"]')).not.toBeVisible()
     })
   })
@@ -289,13 +289,13 @@ test.describe('SearchFilters Component', () => {
     }) => {
       await page.locator('button:has-text("Filters")').click()
 
-      const importanceSelect = page
+      const _importanceSelect = page
         .locator('text="Importance"')
         .locator('..')
         .locator('[role="combobox"]')
 
       // Cycle through selections
-      const selections = ['High', 'Any importance', 'Medium', 'Any importance', 'Low']
+      const _selections = ['High', 'Any importance', 'Medium', 'Any importance', 'Low']
 
       for (const selection of selections) {
         await importanceSelect.click()
@@ -312,21 +312,21 @@ test.describe('SearchFilters Component', () => {
       await page.locator('button:has-text("Filters")').click()
 
       // Check importance placeholder
-      const importanceSelect = page
+      const _importanceSelect = page
         .locator('text="Importance"')
         .locator('..')
         .locator('[role="combobox"]')
-      const importancePlaceholder = importanceSelect.locator('[data-placeholder]')
+      const _importancePlaceholder = importanceSelect.locator('[data-placeholder]')
       if (await importancePlaceholder.isVisible()) {
         await expect(importancePlaceholder).toContainText('Any importance')
       }
 
       // Check sentiment placeholder
-      const sentimentSelect = page
+      const _sentimentSelect = page
         .locator('text="Sentiment"')
         .locator('..')
         .locator('[role="combobox"]')
-      const sentimentPlaceholder = sentimentSelect.locator('[data-placeholder]')
+      const _sentimentPlaceholder = sentimentSelect.locator('[data-placeholder]')
       if (await sentimentPlaceholder.isVisible()) {
         await expect(sentimentPlaceholder).toContainText('Any sentiment')
       }
@@ -336,14 +336,14 @@ test.describe('SearchFilters Component', () => {
       await page.locator('button:has-text("Filters")').click()
 
       // Set specific values
-      const importanceSelect = page
+      const _importanceSelect = page
         .locator('text="Importance"')
         .locator('..')
         .locator('[role="combobox"]')
       await importanceSelect.click()
       await page.locator('[role="option"]:has-text("High")').click()
 
-      const sentimentSelect = page
+      const _sentimentSelect = page
         .locator('text="Sentiment"')
         .locator('..')
         .locator('[role="combobox"]')
@@ -371,7 +371,7 @@ test.describe('SearchFilters Component', () => {
   test.describe('Regression Testing', () => {
     test('should not affect other components in the app', async ({ page }) => {
       // Test that search input still works
-      const searchInput = page.locator('input[placeholder*="search"]')
+      const _searchInput = page.locator('input[placeholder*="search"]')
       await searchInput.fill('test query')
       await expect(searchInput).toHaveValue('test query')
 
@@ -407,7 +407,7 @@ test.describe('SearchFilters Component', () => {
       await page.locator('button:has-text("Filters")').click()
       await page.waitForTimeout(500)
 
-      const importanceSelect = page
+      const _importanceSelect = page
         .locator('text="Importance"')
         .locator('..')
         .locator('[role="combobox"]')
@@ -419,7 +419,7 @@ test.describe('SearchFilters Component', () => {
       await page.waitForTimeout(1000)
 
       // Filter out known non-critical warnings
-      const criticalErrors = consoleErrors.filter(
+      const _criticalErrors = consoleErrors.filter(
         error =>
           !error.includes('Warning') &&
           !error.includes('Download the React DevTools') &&
@@ -434,7 +434,7 @@ test.describe('SearchFilters Component', () => {
       await page.locator('button:has-text("Filters")').click()
 
       // Test importance Select
-      const importanceSelect = page
+      const _importanceSelect = page
         .locator('text="Importance"')
         .locator('..')
         .locator('[role="combobox"]')
@@ -443,7 +443,7 @@ test.describe('SearchFilters Component', () => {
       await expect(importanceSelect).toContainText('Medium')
 
       // Test sentiment Select immediately after
-      const sentimentSelect = page
+      const _sentimentSelect = page
         .locator('text="Sentiment"')
         .locator('..')
         .locator('[role="combobox"]')
@@ -477,7 +477,7 @@ test.describe('SearchFilters Component', () => {
       await page.keyboard.press('Enter')
 
       // Verify selection worked
-      const importanceSelect = page
+      const _importanceSelect = page
         .locator('text="Importance"')
         .locator('..')
         .locator('[role="combobox"]')
@@ -488,7 +488,7 @@ test.describe('SearchFilters Component', () => {
       await page.locator('button:has-text("Filters")').click()
 
       // Check importance Select ARIA attributes
-      const importanceSelect = page
+      const _importanceSelect = page
         .locator('text="Importance"')
         .locator('..')
         .locator('[role="combobox"]')
@@ -500,21 +500,21 @@ test.describe('SearchFilters Component', () => {
       await expect(importanceSelect).toHaveAttribute('aria-expanded', 'true')
 
       // Check dropdown content ARIA attributes
-      const selectContent = page.locator('[role="listbox"]')
+      const _selectContent = page.locator('[role="listbox"]')
       await expect(selectContent).toBeVisible()
 
-      const options = selectContent.locator('[role="option"]')
+      const _options = selectContent.locator('[role="option"]')
       expect(await options.count()).toBeGreaterThan(0)
     })
 
     test('should display filter badge correctly', async ({ page }) => {
       // Initially no badge should be visible
-      const filtersButton = page.locator('button:has-text("Filters")')
+      const _filtersButton = page.locator('button:has-text("Filters")')
       await expect(filtersButton.locator('.badge, [class*="badge"]')).not.toBeVisible()
 
       // Add a filter
       await filtersButton.click()
-      const importanceSelect = page
+      const _importanceSelect = page
         .locator('text="Importance"')
         .locator('..')
         .locator('[role="combobox"]')
@@ -523,7 +523,7 @@ test.describe('SearchFilters Component', () => {
       await page.locator('button:has-text("Apply Filters")').click()
 
       // Badge should now be visible with count
-      const badge = filtersButton.locator('.badge, [class*="badge"]')
+      const _badge = filtersButton.locator('.badge, [class*="badge"]')
       await expect(badge).toBeVisible()
       await expect(badge).toContainText('1')
     })

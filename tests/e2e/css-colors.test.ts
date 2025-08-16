@@ -11,11 +11,11 @@ test.describe('CSS Design System Colors', () => {
   test('should define all required OKLCH color variables', async ({ page }) => {
     await page.goto('/')
 
-    const colorVariables = await page.evaluate(() => {
-      const root = document.documentElement
-      const styles = window.getComputedStyle(root)
+    const _colorVariables = await page.evaluate(() => {
+      const _root = document.documentElement
+      const _styles = window.getComputedStyle(root)
 
-      const requiredVariables = [
+      const _requiredVariables = [
         '--background',
         '--foreground',
         '--card',
@@ -40,7 +40,7 @@ test.describe('CSS Design System Colors', () => {
       const values: Record<string, { value: string; isOklch: boolean }> = {}
 
       requiredVariables.forEach(variable => {
-        const value = styles.getPropertyValue(variable).trim()
+        const _value = styles.getPropertyValue(variable).trim()
         values[variable] = {
           value,
           isOklch: value.includes('oklch'),
@@ -62,9 +62,9 @@ test.describe('CSS Design System Colors', () => {
   test('should have proper OKLCH values for light theme', async ({ page }) => {
     await page.goto('/')
 
-    const lightThemeColors = await page.evaluate(() => {
-      const root = document.documentElement
-      const styles = window.getComputedStyle(root)
+    const _lightThemeColors = await page.evaluate(() => {
+      const _root = document.documentElement
+      const _styles = window.getComputedStyle(root)
 
       return {
         background: styles.getPropertyValue('--background').trim(),
@@ -86,8 +86,8 @@ test.describe('CSS Design System Colors', () => {
     await waitForDashboardLoad(page)
 
     // Check header uses card background
-    const headerStyles = await page.locator('header').evaluate(el => {
-      const styles = window.getComputedStyle(el)
+    const _headerStyles = await page.locator('header').evaluate(el => {
+      const _styles = window.getComputedStyle(el)
       return {
         backgroundColor: styles.backgroundColor,
         color: styles.color,
@@ -99,8 +99,8 @@ test.describe('CSS Design System Colors', () => {
     expect(headerStyles.backgroundColor).not.toMatch(/#f9fafb/i) // Not hardcoded gray
 
     // Check main content uses background color
-    const mainStyles = await page.locator('main').evaluate(el => {
-      const styles = window.getComputedStyle(el)
+    const _mainStyles = await page.locator('main').evaluate(el => {
+      const _styles = window.getComputedStyle(el)
       return {
         backgroundColor: styles.backgroundColor,
         color: styles.color,
@@ -117,7 +117,7 @@ test.describe('CSS Design System Colors', () => {
     await waitForDashboardLoad(page)
 
     // Check heading uses foreground color
-    const headingColor = await page
+    const _headingColor = await page
       .locator('h1')
       .filter({ hasText: 'The Log' })
       .evaluate(el => window.getComputedStyle(el).color)
@@ -127,7 +127,7 @@ test.describe('CSS Design System Colors', () => {
     expect(headingColor).not.toMatch(/#1f2937/i)
 
     // Check description uses muted foreground
-    const descriptionColor = await page
+    const _descriptionColor = await page
       .locator('p')
       .filter({ hasText: 'Capture your thoughts freely' })
       .evaluate(el => window.getComputedStyle(el).color)
@@ -142,13 +142,13 @@ test.describe('CSS Design System Colors', () => {
     await waitForDashboardLoad(page)
 
     // Find card elements
-    const cards = await page.locator('[class*="card"], .card').all()
+    const _cards = await page.locator('[class*="card"], .card').all()
 
     for (const card of cards.slice(0, 3)) {
       // Check first 3 cards
       if (await card.isVisible()) {
-        const cardStyles = await card.evaluate(el => {
-          const styles = window.getComputedStyle(el)
+        const _cardStyles = await card.evaluate(el => {
+          const _styles = window.getComputedStyle(el)
           return {
             backgroundColor: styles.backgroundColor,
             color: styles.color,
@@ -179,7 +179,7 @@ test.describe('CSS Design System Colors', () => {
     // Enable dark theme via next-themes
     await page.evaluate(() => {
       // Force dark theme through next-themes
-      const html = document.documentElement
+      const _html = document.documentElement
       html.classList.add('dark')
       html.setAttribute('data-theme', 'dark')
       html.style.colorScheme = 'dark'
@@ -188,9 +188,9 @@ test.describe('CSS Design System Colors', () => {
     // Wait for CSS to apply the dark theme variables
     await page.waitForTimeout(1000)
 
-    const darkThemeColors = await page.evaluate(() => {
-      const root = document.documentElement
-      const styles = window.getComputedStyle(root)
+    const _darkThemeColors = await page.evaluate(() => {
+      const _root = document.documentElement
+      const _styles = window.getComputedStyle(root)
 
       return {
         background: styles.getPropertyValue('--background').trim(),
@@ -216,15 +216,15 @@ test.describe('CSS Design System Colors', () => {
     await waitForDashboardLoad(page)
 
     // Get all text elements and check visibility
-    const textElements = await page.locator('h1, h2, h3, h4, h5, h6, p, span, label').all()
+    const _textElements = await page.locator('h1, h2, h3, h4, h5, h6, p, span, label').all()
 
-    const invisibleElements = []
+    const _invisibleElements = []
 
     for (const element of textElements.slice(0, 20)) {
       // Check first 20 elements
       if (await element.isVisible()) {
-        const styles = await element.evaluate(el => {
-          const computed = window.getComputedStyle(el)
+        const _styles = await element.evaluate(el => {
+          const _computed = window.getComputedStyle(el)
           return {
             color: computed.color,
             backgroundColor: computed.backgroundColor,
@@ -234,7 +234,7 @@ test.describe('CSS Design System Colors', () => {
         })
 
         // Check for invisible conditions
-        const isInvisible =
+        const _isInvisible =
           styles.opacity === '0' ||
           styles.visibility === 'hidden' ||
           (styles.color === 'rgb(255, 255, 255)' && // White text
@@ -242,7 +242,7 @@ test.describe('CSS Design System Colors', () => {
           styles.color === 'rgba(0, 0, 0, 0)' // Transparent text
 
         if (isInvisible) {
-          const elementInfo = await element.evaluate(el => ({
+          const _elementInfo = await element.evaluate(el => ({
             tagName: el.tagName,
             className: el.className,
             textContent: el.textContent?.slice(0, 50),
@@ -263,12 +263,12 @@ test.describe('CSS Design System Colors', () => {
     await waitForDashboardLoad(page)
 
     // Check that similar semantic elements use consistent colors
-    const headings = await page.locator('h1, h2, h3').all()
+    const _headings = await page.locator('h1, h2, h3').all()
     const headingColors: string[] = []
 
     for (const heading of headings.slice(0, 5)) {
       if (await heading.isVisible()) {
-        const color = await heading.evaluate(el => window.getComputedStyle(el).color)
+        const _color = await heading.evaluate(el => window.getComputedStyle(el).color)
         headingColors.push(color)
       }
     }
@@ -280,12 +280,12 @@ test.describe('CSS Design System Colors', () => {
     })
 
     // Check muted text consistency
-    const mutedElements = await page.locator('[class*="muted"], .text-muted-foreground').all()
+    const _mutedElements = await page.locator('[class*="muted"], .text-muted-foreground').all()
     const mutedColors: string[] = []
 
     for (const element of mutedElements.slice(0, 3)) {
       if (await element.isVisible()) {
-        const color = await element.evaluate(el => window.getComputedStyle(el).color)
+        const _color = await element.evaluate(el => window.getComputedStyle(el).color)
         mutedColors.push(color)
       }
     }

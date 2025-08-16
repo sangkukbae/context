@@ -11,7 +11,7 @@ import { test, expect } from '@playwright/test'
 import { readFileSync, writeFileSync } from 'fs'
 import path from 'path'
 
-const SEARCH_FILTERS_PATH = path.join(process.cwd(), 'components/search/search-filters.tsx')
+const _SEARCH_FILTERS_PATH = path.join(process.cwd(), 'components/search/search-filters.tsx')
 
 test.describe('SearchFilters Static Code Analysis', () => {
   let searchFiltersCode: string
@@ -24,7 +24,7 @@ test.describe('SearchFilters Static Code Analysis', () => {
   test.describe('SelectItem Value Prop Fixes', () => {
     test('should not contain SelectItem with empty string values', () => {
       // Check for the specific patterns that would cause Radix UI errors
-      const emptyStringPatterns = [
+      const _emptyStringPatterns = [
         /<SelectItem\s+value=""\s*>/,
         /<SelectItem\s+value=''\s*>/,
         /value=""\s*>/,
@@ -32,7 +32,7 @@ test.describe('SearchFilters Static Code Analysis', () => {
       ]
 
       for (const pattern of emptyStringPatterns) {
-        const matches = searchFiltersCode.match(pattern)
+        const _matches = searchFiltersCode.match(pattern)
         expect(matches).toBeNull()
       }
 
@@ -41,8 +41,8 @@ test.describe('SearchFilters Static Code Analysis', () => {
 
     test('should use "any" value for importance SelectItem', () => {
       // Look for the specific fix in importance SelectItem
-      const importanceAnyPattern = /<SelectItem\s+value="any"\s*>Any importance<\/SelectItem>/
-      const matches = searchFiltersCode.match(importanceAnyPattern)
+      const _importanceAnyPattern = /<SelectItem\s+value="any"\s*>Any importance<\/SelectItem>/
+      const _matches = searchFiltersCode.match(importanceAnyPattern)
 
       expect(matches).not.toBeNull()
       expect(matches).toHaveLength(1)
@@ -52,8 +52,8 @@ test.describe('SearchFilters Static Code Analysis', () => {
 
     test('should use "any" value for sentiment SelectItem', () => {
       // Look for the specific fix in sentiment SelectItem
-      const sentimentAnyPattern = /<SelectItem\s+value="any"\s*>Any sentiment<\/SelectItem>/
-      const matches = searchFiltersCode.match(sentimentAnyPattern)
+      const _sentimentAnyPattern = /<SelectItem\s+value="any"\s*>Any sentiment<\/SelectItem>/
+      const _matches = searchFiltersCode.match(sentimentAnyPattern)
 
       expect(matches).not.toBeNull()
       expect(matches).toHaveLength(1)
@@ -62,14 +62,14 @@ test.describe('SearchFilters Static Code Analysis', () => {
     })
 
     test('should have correct line numbers for the fixes', () => {
-      const lines = searchFiltersCode.split('\n')
+      const _lines = searchFiltersCode.split('\n')
 
       // Check line 429 (importance SelectItem)
-      const line429 = lines[428] // 0-indexed
+      const _line429 = lines[428] // 0-indexed
       expect(line429).toContain('<SelectItem value="any">Any importance</SelectItem>')
 
       // Check line 451 (sentiment SelectItem)
-      const line451 = lines[450] // 0-indexed
+      const _line451 = lines[450] // 0-indexed
       expect(line451).toContain('<SelectItem value="any">Any sentiment</SelectItem>')
 
       console.log('✅ SelectItem fixes are on the expected lines (429 and 451)')
@@ -79,16 +79,16 @@ test.describe('SearchFilters Static Code Analysis', () => {
   test.describe('onValueChange Logic Verification', () => {
     test('should handle "any" to undefined conversion for importance', () => {
       // Look for the importance onValueChange logic
-      const importanceOnValueChangePattern =
+      const _importanceOnValueChangePattern =
         /onValueChange=\{value\s*=>\s*updateFilters\(\{\s*importance:\s*value\s*===\s*['"]any['"][\s\S]*?\}\)\s*\}/
-      const matches = searchFiltersCode.match(importanceOnValueChangePattern)
+      const _matches = searchFiltersCode.match(importanceOnValueChangePattern)
 
       expect(matches).not.toBeNull()
 
       // More specific check for the exact logic
-      const exactPattern =
+      const _exactPattern =
         /importance:\s*value\s*===\s*['"]any['"][\s\S]*?\?\s*undefined\s*:\s*\(value\s+as\s+['"]low['"][\s\S]*?\)/
-      const exactMatches = searchFiltersCode.match(exactPattern)
+      const _exactMatches = searchFiltersCode.match(exactPattern)
 
       expect(exactMatches).not.toBeNull()
 
@@ -97,9 +97,9 @@ test.describe('SearchFilters Static Code Analysis', () => {
 
     test('should handle "any" to undefined conversion for sentiment', () => {
       // Look for the sentiment onValueChange logic
-      const sentimentOnValueChangePattern =
+      const _sentimentOnValueChangePattern =
         /sentiment:\s*value\s*===\s*['"]any['"][\s\S]*?\?\s*undefined\s*:\s*\(value\s+as\s+['"]positive['"][\s\S]*?\)/
-      const matches = searchFiltersCode.match(sentimentOnValueChangePattern)
+      const _matches = searchFiltersCode.match(sentimentOnValueChangePattern)
 
       expect(matches).not.toBeNull()
 
@@ -108,15 +108,15 @@ test.describe('SearchFilters Static Code Analysis', () => {
 
     test('should use correct TypeScript type casting', () => {
       // Check for proper type casting in importance
-      const importanceTypeCast =
+      const _importanceTypeCast =
         /value\s+as\s+['"]low['"][\s\S]*?['"]medium['"][\s\S]*?['"]high['"][\s\S]*?\)/
-      const importanceMatches = searchFiltersCode.match(importanceTypeCast)
+      const _importanceMatches = searchFiltersCode.match(importanceTypeCast)
       expect(importanceMatches).not.toBeNull()
 
       // Check for proper type casting in sentiment
-      const sentimentTypeCast =
+      const _sentimentTypeCast =
         /value\s+as\s+['"]positive['"][\s\S]*?['"]neutral['"][\s\S]*?['"]negative['"][\s\S]*?\)/
-      const sentimentMatches = searchFiltersCode.match(sentimentTypeCast)
+      const _sentimentMatches = searchFiltersCode.match(sentimentTypeCast)
       expect(sentimentMatches).not.toBeNull()
 
       console.log('✅ TypeScript type casting is correct for both selects')
@@ -126,13 +126,13 @@ test.describe('SearchFilters Static Code Analysis', () => {
   test.describe('Select Value Prop Consistency', () => {
     test('should use value prop correctly for controlled components', () => {
       // Check importance Select value prop
-      const importanceValuePattern = /value=\{filters\.importance\s*\|\|\s*['"]any['"][\s\S]*?\}/
-      const importanceMatches = searchFiltersCode.match(importanceValuePattern)
+      const _importanceValuePattern = /value=\{filters\.importance\s*\|\|\s*['"]any['"][\s\S]*?\}/
+      const _importanceMatches = searchFiltersCode.match(importanceValuePattern)
       expect(importanceMatches).not.toBeNull()
 
       // Check sentiment Select value prop
-      const sentimentValuePattern = /value=\{filters\.sentiment\s*\|\|\s*['"]any['"][\s\S]*?\}/
-      const sentimentMatches = searchFiltersCode.match(sentimentValuePattern)
+      const _sentimentValuePattern = /value=\{filters\.sentiment\s*\|\|\s*['"]any['"][\s\S]*?\}/
+      const _sentimentMatches = searchFiltersCode.match(sentimentValuePattern)
       expect(sentimentMatches).not.toBeNull()
 
       console.log('✅ Select components use controlled value props correctly')
@@ -140,8 +140,8 @@ test.describe('SearchFilters Static Code Analysis', () => {
 
     test('should have consistent placeholder values', () => {
       // Check for consistent placeholder text
-      const importancePlaceholder = searchFiltersCode.includes('placeholder="Any importance"')
-      const sentimentPlaceholder = searchFiltersCode.includes('placeholder="Any sentiment"')
+      const _importancePlaceholder = searchFiltersCode.includes('placeholder="Any importance"')
+      const _sentimentPlaceholder = searchFiltersCode.includes('placeholder="Any sentiment"')
 
       expect(importancePlaceholder).toBe(true)
       expect(sentimentPlaceholder).toBe(true)
@@ -153,7 +153,7 @@ test.describe('SearchFilters Static Code Analysis', () => {
   test.describe('Code Structure and Best Practices', () => {
     test('should import all required components', () => {
       // Check for required imports
-      const requiredImports = [
+      const _requiredImports = [
         'Select',
         'SelectContent',
         'SelectItem',
@@ -170,12 +170,12 @@ test.describe('SearchFilters Static Code Analysis', () => {
 
     test('should use proper JSX structure', () => {
       // Check for proper nesting of Select components
-      const selectStructurePatterns = [
+      const _selectStructurePatterns = [
         /<Select[\s\S]*?<SelectTrigger[\s\S]*?<SelectValue[\s\S]*?<\/SelectTrigger>[\s\S]*?<SelectContent[\s\S]*?<SelectItem[\s\S]*?<\/SelectContent>[\s\S]*?<\/Select>/,
       ]
 
       for (const pattern of selectStructurePatterns) {
-        const matches = searchFiltersCode.match(pattern)
+        const _matches = searchFiltersCode.match(pattern)
         expect(matches).not.toBeNull()
       }
 
@@ -184,7 +184,7 @@ test.describe('SearchFilters Static Code Analysis', () => {
 
     test('should not have any remaining empty string artifacts', () => {
       // Look for any patterns that might indicate leftover empty string usage
-      const suspiciousPatterns = [
+      const _suspiciousPatterns = [
         /value=""\s*>/,
         /value=''\s*>/,
         /===\s*['"]['"]/, // Empty string comparisons
@@ -192,7 +192,7 @@ test.describe('SearchFilters Static Code Analysis', () => {
       ]
 
       for (const pattern of suspiciousPatterns) {
-        const matches = searchFiltersCode.match(pattern)
+        const _matches = searchFiltersCode.match(pattern)
         expect(matches).toBeNull()
       }
 
@@ -203,7 +203,7 @@ test.describe('SearchFilters Static Code Analysis', () => {
   test.describe('Regression Prevention', () => {
     test('should maintain existing functionality', () => {
       // Check that other SelectItems still have proper values
-      const allSelectItems = searchFiltersCode.match(/<SelectItem\s+value="[^"]+"\s*>/g) || []
+      const _allSelectItems = searchFiltersCode.match(/<SelectItem\s+value="[^"]+"\s*>/g) || []
 
       // Should have at least 8 SelectItems (2 "any" + 3 importance + 3 sentiment)
       expect(allSelectItems.length).toBeGreaterThanOrEqual(8)
@@ -219,9 +219,9 @@ test.describe('SearchFilters Static Code Analysis', () => {
 
     test('should preserve component interface', () => {
       // Check that component props haven't changed
-      const componentSignature =
+      const _componentSignature =
         /export\s+function\s+SearchFilters\s*\(\s*\{[\s\S]*?\}\s*:\s*SearchFiltersProps\s*\)/
-      const matches = searchFiltersCode.match(componentSignature)
+      const _matches = searchFiltersCode.match(componentSignature)
 
       expect(matches).not.toBeNull()
 
@@ -235,7 +235,7 @@ test.describe('SearchFilters Static Code Analysis', () => {
 
     test('should maintain filter state management', () => {
       // Check that updateFilters function is still used correctly
-      const updateFiltersUsage = searchFiltersCode.match(/updateFilters\s*\(/g) || []
+      const _updateFiltersUsage = searchFiltersCode.match(/updateFilters\s*\(/g) || []
 
       // Should have multiple calls to updateFilters
       expect(updateFiltersUsage.length).toBeGreaterThan(5)
@@ -295,7 +295,7 @@ test.describe('SearchFilters Static Code Analysis', () => {
     })
 
     test('should generate fix verification report', () => {
-      const report = {
+      const _report = {
         timestamp: new Date().toISOString(),
         component: 'SearchFilters',
         fixesApplied: [
@@ -315,7 +315,7 @@ test.describe('SearchFilters Static Code Analysis', () => {
       console.log(JSON.stringify(report, null, 2))
 
       // Write report to file for reference
-      const reportPath = path.join(process.cwd(), 'search-filters-fix-verification.json')
+      const _reportPath = path.join(process.cwd(), 'search-filters-fix-verification.json')
       writeFileSync(reportPath, JSON.stringify(report, null, 2))
 
       console.log(`\n📄 Report saved to: ${reportPath}`)
