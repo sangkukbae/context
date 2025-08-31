@@ -12,9 +12,14 @@ import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/types/supabase'
 import { setupTestData, cleanupTestData } from '../fixtures/search-data'
 
-const _supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://jaklhhckzosiodpsicrd.supabase.co'
-const _supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error(
+    'Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY'
+  )
+}
 
 test.describe('Search Database Integration', () => {
   test.beforeEach(async ({ authenticatedUser }) => {
@@ -26,7 +31,7 @@ test.describe('Search Database Integration', () => {
   })
 
   test('should have search tables with correct structure', async ({ authenticatedUser }) => {
-    const _supabase = createClient<Database>(supabaseUrl, supabaseKey, {
+    const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
       global: {
         headers: {
           Authorization: `Bearer ${authenticatedUser.accessToken}`,
@@ -63,7 +68,7 @@ test.describe('Search Database Integration', () => {
   })
 
   test('should have search_content column on notes table', async ({ authenticatedUser }) => {
-    const _supabase = createClient<Database>(supabaseUrl, supabaseKey, {
+    const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
       global: {
         headers: {
           Authorization: `Bearer ${authenticatedUser.accessToken}`,
@@ -85,7 +90,7 @@ test.describe('Search Database Integration', () => {
   })
 
   test('should enforce RLS policies on search tables', async ({ authenticatedUser }) => {
-    const _supabase = createClient<Database>(supabaseUrl, supabaseKey, {
+    const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
       global: {
         headers: {
           Authorization: `Bearer ${authenticatedUser.accessToken}`,
@@ -119,7 +124,7 @@ test.describe('Search Database Integration', () => {
   })
 
   test('should have working search_notes_keyword function', async ({ authenticatedUser }) => {
-    const _supabase = createClient<Database>(supabaseUrl, supabaseKey, {
+    const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
       global: {
         headers: {
           Authorization: `Bearer ${authenticatedUser.accessToken}`,
@@ -140,7 +145,7 @@ test.describe('Search Database Integration', () => {
     expect(data?.length).toBeGreaterThan(0)
 
     if (data && data.length > 0) {
-      const _result = data[0]
+      const result = data[0]
       expect(result).toHaveProperty('id')
       expect(result).toHaveProperty('content')
       expect(result).toHaveProperty('rank')
@@ -150,7 +155,7 @@ test.describe('Search Database Integration', () => {
   })
 
   test('should handle Korean text search correctly', async ({ authenticatedUser }) => {
-    const _supabase = createClient<Database>(supabaseUrl, supabaseKey, {
+    const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
       global: {
         headers: {
           Authorization: `Bearer ${authenticatedUser.accessToken}`,
@@ -171,13 +176,13 @@ test.describe('Search Database Integration', () => {
     expect(data?.length).toBeGreaterThan(0)
 
     if (data && data.length > 0) {
-      const _koreanNote = data.find((note: { content: string }) => note.content.includes('한국어'))
+      const koreanNote = data.find((note: { content: string }) => note.content.includes('한국어'))
       expect(koreanNote).toBeDefined()
     }
   })
 
   test('should have working track_search_query function', async ({ authenticatedUser }) => {
-    const _supabase = createClient<Database>(supabaseUrl, supabaseKey, {
+    const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
       global: {
         headers: {
           Authorization: `Bearer ${authenticatedUser.accessToken}`,
@@ -215,7 +220,7 @@ test.describe('Search Database Integration', () => {
   })
 
   test('should have working get_search_suggestions function', async ({ authenticatedUser }) => {
-    const _supabase = createClient<Database>(supabaseUrl, supabaseKey, {
+    const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
       global: {
         headers: {
           Authorization: `Bearer ${authenticatedUser.accessToken}`,
@@ -244,7 +249,7 @@ test.describe('Search Database Integration', () => {
     expect(Array.isArray(data)).toBe(true)
 
     if (data && data.length > 0) {
-      const _suggestion = data[0]
+      const suggestion = data[0]
       expect(suggestion).toHaveProperty('query')
       expect(suggestion).toHaveProperty('use_count')
       expect(suggestion).toHaveProperty('last_used_at')
@@ -252,7 +257,7 @@ test.describe('Search Database Integration', () => {
   })
 
   test('should handle search filters correctly', async ({ authenticatedUser }) => {
-    const _supabase = createClient<Database>(supabaseUrl, supabaseKey, {
+    const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
       global: {
         headers: {
           Authorization: `Bearer ${authenticatedUser.accessToken}`,
@@ -275,7 +280,7 @@ test.describe('Search Database Integration', () => {
     // Should only return notes with machine-learning tag
     if (data && data.length > 0) {
       data.forEach((note: { metadata: unknown }) => {
-        const _metadata = note.metadata as Record<string, unknown>
+        const metadata = note.metadata as Record<string, unknown>
         if (metadata?.tags) {
           expect(metadata.tags).toContain('machine-learning')
         }
@@ -284,7 +289,7 @@ test.describe('Search Database Integration', () => {
   })
 
   test('should maintain search performance under 500ms', async ({ authenticatedUser }) => {
-    const _supabase = createClient<Database>(supabaseUrl, supabaseKey, {
+    const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
       global: {
         headers: {
           Authorization: `Bearer ${authenticatedUser.accessToken}`,
@@ -292,7 +297,7 @@ test.describe('Search Database Integration', () => {
       },
     })
 
-    const _startTime = Date.now()
+    const startTime = Date.now()
 
     const { data, error } = await supabase.rpc('search_notes_keyword', {
       p_user_id: authenticatedUser.id,
@@ -302,7 +307,7 @@ test.describe('Search Database Integration', () => {
       p_filters: {},
     })
 
-    const _executionTime = Date.now() - startTime
+    const executionTime = Date.now() - startTime
 
     expect(error).toBeNull()
     expect(executionTime).toBeLessThan(500)
@@ -310,7 +315,7 @@ test.describe('Search Database Integration', () => {
   })
 
   test('should handle search cache operations', async ({ authenticatedUser }) => {
-    const _supabase = createClient<Database>(supabaseUrl, supabaseKey, {
+    const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
       global: {
         headers: {
           Authorization: `Bearer ${authenticatedUser.accessToken}`,
@@ -319,15 +324,15 @@ test.describe('Search Database Integration', () => {
     })
 
     // Insert cache entry
-    const _cacheKey = `test-cache-${Date.now()}`
-    const _testResults = [{ id: '123', content: 'test content', score: 0.8 }]
+    const cacheKey = `test-cache-${Date.now()}`
+    const testResults = [{ id: '123', content: 'test content', score: 0.8 }]
 
     const { error: insertError } = await supabase.from('search_cache').insert({
       cache_key: cacheKey,
       user_id: authenticatedUser.id,
       query: 'test query',
       filters: {},
-      results: testResults as any,
+      results: testResults as Json,
       results_count: 1,
       expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
     })

@@ -1,13 +1,19 @@
 /**
  * Test Fixtures for Authentication
  */
+/* eslint-disable react-hooks/rules-of-hooks */
 import { test as base, expect } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/types/supabase'
 
-const _supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://jaklhhckzosiodpsicrd.supabase.co'
-const _supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error(
+    'Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY'
+  )
+}
 
 export interface AuthenticatedUser {
   id: string
@@ -20,16 +26,16 @@ type TestFixtures = {
   apiHeaders: Record<string, string>
 }
 
-export const _test = base.extend<TestFixtures>({
+export const test = base.extend<TestFixtures>({
   authenticatedUser: async ({}, use) => {
-    const _supabase = createClient<Database>(supabaseUrl, supabaseKey)
+    const supabase = createClient<Database>(supabaseUrl, supabaseKey)
 
     // Create a test user or use existing test credentials
-    const _testEmail = `test-${Date.now()}@example.com`
-    const _testPassword = 'testPassword123!'
+    const testEmail = `test-${Date.now()}@example.com`
+    const testPassword = 'testPassword123!'
 
     // Sign up test user
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email: testEmail,
       password: testPassword,
     })
@@ -48,8 +54,8 @@ export const _test = base.extend<TestFixtures>({
       throw new Error(`Test user sign in failed: ${signInError.message}`)
     }
 
-    const _user = signInData.user
-    const _session = signInData.session
+    const user = signInData.user
+    const session = signInData.session
 
     if (!user || !session) {
       throw new Error('Failed to authenticate test user')

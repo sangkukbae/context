@@ -18,6 +18,11 @@ import type {
   SearchHistoryItem,
   SearchAnalytics,
 } from '@/lib/schemas/search'
+import {
+  PERFORMANCE_THRESHOLD_FAST,
+  PERFORMANCE_THRESHOLD_SLOW,
+  DEFAULT_CACHE_TTL_MINUTES,
+} from '@/lib/constants/search'
 
 // Type for authenticated Supabase client
 type AuthenticatedSupabaseClient = SupabaseClient<Database>
@@ -329,8 +334,12 @@ export async function getSearchAnalytics(
     }
 
     // Performance metrics
-    const fastQueries = analytics.filter(a => a.execution_time_ms < 200).length
-    const slowQueries = analytics.filter(a => a.execution_time_ms > 1000).length
+    const fastQueries = analytics.filter(
+      a => a.execution_time_ms < PERFORMANCE_THRESHOLD_FAST
+    ).length
+    const slowQueries = analytics.filter(
+      a => a.execution_time_ms > PERFORMANCE_THRESHOLD_SLOW
+    ).length
     const averageResultCount =
       totalQueries > 0 ? analytics.reduce((sum, a) => sum + a.results_count, 0) / totalQueries : 0
 
@@ -458,7 +467,7 @@ export async function setCachedSearchResults(
   query: string,
   results: SearchResult[],
   filters: SearchFilters = {},
-  ttlMinutes: number = 60
+  ttlMinutes: number = DEFAULT_CACHE_TTL_MINUTES
 ): Promise<void> {
   try {
     const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000)

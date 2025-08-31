@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import type { SearchSuggestion } from '@/lib/schemas/search'
+import { createAuthHeaders } from '@/lib/utils/auth-token'
 
 interface SearchInputProps {
   onSearch: (query: string, filters?: Record<string, unknown>) => void
@@ -84,15 +85,15 @@ export function SearchInput({
 
       setLoadingSuggestions(true)
       try {
-        const token = localStorage.getItem('supabase.auth.token')
-        if (!token) return
+        const authHeaders = createAuthHeaders()
+        if (!authHeaders) return
 
         const response = await fetch(
           `/api/search/suggestions?query=${encodeURIComponent(searchQuery)}&limit=8`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
+              ...authHeaders,
             },
           }
         )

@@ -2,11 +2,16 @@
  * Test Data Fixtures for Search Tests
  */
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/lib/types/supabase'
+import type { Database, Json } from '@/lib/types/supabase'
 
-const _supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://jaklhhckzosiodpsicrd.supabase.co'
-const _supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error(
+    'Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY'
+  )
+}
 
 export interface TestNote {
   id?: string
@@ -103,7 +108,7 @@ export const testNotes: TestNote[] = [
 ]
 
 export async function setupTestData(userId: string, accessToken: string): Promise<TestNote[]> {
-  const _supabase = createClient<Database>(supabaseUrl, supabaseKey, {
+  const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
     global: {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -119,7 +124,7 @@ export async function setupTestData(userId: string, accessToken: string): Promis
       .insert({
         user_id: userId,
         content: note.content,
-        metadata: note.metadata as any,
+        metadata: note.metadata as Json,
       })
       .select()
       .single()
@@ -142,7 +147,7 @@ export async function setupTestData(userId: string, accessToken: string): Promis
 }
 
 export async function cleanupTestData(userId: string, accessToken: string): Promise<void> {
-  const _supabase = createClient<Database>(supabaseUrl, supabaseKey, {
+  const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
     global: {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -161,7 +166,7 @@ export async function cleanupTestData(userId: string, accessToken: string): Prom
   await supabase.from('search_cache').delete().eq('user_id', userId)
 }
 
-export const _searchTestCases = [
+export const searchTestCases = [
   {
     query: 'machine learning',
     expectedResults: 1,
@@ -194,7 +199,7 @@ export const _searchTestCases = [
   },
 ]
 
-export const _performanceTestCases = [
+export const performanceTestCases = [
   {
     query: 'search',
     maxExecutionTime: 500,

@@ -26,6 +26,7 @@ import type {
   SearchQueryType,
   SearchResponse,
 } from '@/lib/schemas/search'
+import { createAuthHeaders } from '@/lib/utils/auth-token'
 
 interface SearchProps {
   initialQuery?: string
@@ -88,8 +89,8 @@ export function Search({
 
   const fetchAvailableTags = async () => {
     try {
-      const token = localStorage.getItem('supabase.auth.token')
-      if (!token) return
+      const authHeaders = createAuthHeaders()
+      if (!authHeaders) return
 
       // This would be a separate API endpoint to get popular tags
       // For now, we'll use some mock data
@@ -139,8 +140,8 @@ export function Search({
       }))
 
       try {
-        const token = localStorage.getItem('supabase.auth.token')
-        if (!token) {
+        const authHeaders = createAuthHeaders()
+        if (!authHeaders) {
           throw new Error('Authentication required')
         }
 
@@ -157,8 +158,8 @@ export function Search({
         const response = await fetch('/api/search', {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
+            ...authHeaders,
           },
           body: JSON.stringify(searchRequest),
         })

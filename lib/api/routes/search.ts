@@ -40,6 +40,7 @@ import {
   deleteSearchHistoryItem,
   getSearchStats,
 } from '@/lib/supabase/search'
+import { DEFAULT_CACHE_TTL_MINUTES } from '@/lib/constants/search'
 
 // Type for Hono context with Supabase client
 type HonoContext = Context
@@ -336,7 +337,7 @@ app.post(
           sanitizedQuery,
           searchResults.results,
           filterValidation.sanitizedFilters,
-          60 // 1 hour TTL
+          DEFAULT_CACHE_TTL_MINUTES // 1 hour TTL
         ).catch(error => {
           console.error('Failed to cache search results:', error)
         })
